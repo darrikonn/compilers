@@ -1,0 +1,23 @@
+class Program {
+    /* This is a simple test program */
+    int i, j;
+    int aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
+    int aaa_dddd;
+    int aasdf_12_asdfasd;
+    real number;
+
+    static void main() {
+        i = 0;
+        j = 1;
+
+        if (i < j) {
+            number = 12.34;
+            number = 0.000000000000004;
+            number = 1236789.12345;
+        } else {
+            number = 12.34E7;
+        }
+
+        i = i + j;
+    }
+}
