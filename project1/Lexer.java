@@ -852,7 +852,9 @@ class Lexer {
           case 42: break;
           case 5: 
             { if (yytext().length() > 32) {
-                        return new Token(TokenCode.ERR_LONG_ID);
+                        // return a symbol table entry dummy to show incorrect symbol.
+                        // it is not added to the symbol table entry list.
+                        return new Token(TokenCode.ERR_LONG_ID, new SymbolTableEntry(yytext()));
                     }
                     return new Token(TokenCode.IDENTIFIER, addSymbolTableEntry(yytext()));
             }
