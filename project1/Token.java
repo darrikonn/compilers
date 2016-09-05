@@ -15,7 +15,13 @@ class Token {
         _opType = otype;
     }
 
-    // symbol table entries
+    // symbol table entries (identifiers)
+    public Token(TokenCode code, SymbolTableEntry entry) {
+        _code = code;
+        _symbolTableEntry = entry;
+    }
+
+    // symbol table entries (numbers)
     public Token(TokenCode code, DataType dtype, SymbolTableEntry entry) {
         _code = code;
         _dataType = dtype;

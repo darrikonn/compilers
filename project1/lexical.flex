@@ -12,13 +12,19 @@
 
 %{
     SymbolTable sym = new SymbolTable();
-    private SymbolTableEntry AddSymbolTableEntry(Object entry) {
+    private SymbolTableEntry addSymbolTableEntry(Object entry) {
         SymbolTableEntry tableEntry;
         if ((tableEntry = sym.findSymbolTableEntry(entry)) == null) {
             return sym.addSymbolTableEntry(yytext());
         }
 
         return tableEntry;
+    }
+
+    private DataType getDataType(String value) {
+        return value.contains(".") || value.contains("E") 
+                ? DataType.REAL 
+                : DataType.INT;
     }
 %}
 
@@ -70,7 +76,6 @@ Unknown     = .
 /* Logical operators */
 "||"        { return new Token(TokenCode.ADDOP, OpType.OR); }
 "&&"        { return new Token(TokenCode.MULOP, OpType.AND); }
-"!"         { return new Token(TokenCode.NOT, OpType.NOT); }
 
 /* Key words */
 "class"     { return new Token(TokenCode.CLASS); }      // instances
@@ -103,20 +108,22 @@ Unknown     = .
                     if (yytext().length() > 32) {
                         return new Token(TokenCode.ERR_LONG_ID);
                     }
-                    SymbolTableEntry entry = AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.IDENTIFIER, DataType.REAL, entry); 
+                    return new Token(TokenCode.IDENTIFIER, addSymbolTableEntry(yytext())); 
                 }
 
 /* Number */
-{Number}        { 
-                    SymbolTableEntry entry = AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.NUMBER, DataType.INT, entry); 
-                }
+{Number}        { return new Token(TokenCode.NUMBER, 
+                            getDataType(yytext()), 
+                            addSymbolTableEntry(yytext())); }
 
 /* Other */
 {WhiteSpace}    { /* Do Nothing */ }
 {Comment}       { /* Do Nothing */ }
-{Unknown}       { return new Token(TokenCode.ERR_ILL_CHAR); } // do not have to return symbol
+{Unknown}       { 
+                    // return a symbol table entry dummy to show incorrect symbol.
+                    // it is not added to the symbol table entry list.
+                    return new Token(TokenCode.ERR_ILL_CHAR, new SymbolTableEntry(yytext())); 
+                } 
 
 
 // Hester will be dead by daylight!

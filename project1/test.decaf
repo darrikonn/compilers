@@ -1,7 +1,40 @@
 class Program {
     
-
     static void main() {
-
+        int i, i_am_the_most_illegal_identifier_in_the_universe_because_i_am_too_long;
+        real j, k, l;
+        i = 500;
+        i = -300;
+        j = 12.45;
+        j = -12.45;
+        k = 12.5E8;
+        k = 12.5E+8;
+        k = 12.5E-8;
+        k = -12.5E8;
+        k = -12.5E+8; /* inline comment 1 */
+        k = -12.5E-8; // inline comment 2
+        /* very cool comment.
+            // comment within a comment
+            **** whatsup
+        */
+        // another comment
+        [] // illegal characters
+        if (k < j) {
+            i++;
+        } else {
+            i = i + 2;
+        }
+        i = i * 8;
+        
+        for (int o = 0; o < 5; o++) {
+            if (o == 0) {
+                continue;
+            }
+            if (o == 4) {
+                break;
+            }
+        }
+        
+        return 0;
     }
 }

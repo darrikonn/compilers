@@ -445,13 +445,19 @@ class Lexer {
 
   /* user code: */
     SymbolTable sym = new SymbolTable();
-    private SymbolTableEntry AddSymbolTableEntry(Object entry) {
+    private SymbolTableEntry addSymbolTableEntry(Object entry) {
         SymbolTableEntry tableEntry;
         if ((tableEntry = sym.findSymbolTableEntry(entry)) == null) {
             return sym.addSymbolTableEntry(yytext());
         }
 
         return tableEntry;
+    }
+
+    private DataType getDataType(String value) {
+        return value.contains(".") || value.contains("E") 
+                ? DataType.REAL 
+                : DataType.INT;
     }
 
 
@@ -827,7 +833,9 @@ class Lexer {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1: 
-            { return new Token(TokenCode.ERR_ILL_CHAR);
+            { // return a symbol table entry dummy to show incorrect symbol.
+                    // it is not added to the symbol table entry list.
+                    return new Token(TokenCode.ERR_ILL_CHAR, new SymbolTableEntry(yytext()));
             }
           case 40: break;
           case 2: 
@@ -846,8 +854,7 @@ class Lexer {
             { if (yytext().length() > 32) {
                         return new Token(TokenCode.ERR_LONG_ID);
                     }
-                    SymbolTableEntry entry = AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.IDENTIFIER, DataType.REAL, entry);
+                    return new Token(TokenCode.IDENTIFIER, addSymbolTableEntry(yytext()));
             }
           case 44: break;
           case 6: 
@@ -859,8 +866,9 @@ class Lexer {
             }
           case 46: break;
           case 8: 
-            { SymbolTableEntry entry = AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.NUMBER, DataType.INT, entry);
+            { return new Token(TokenCode.NUMBER, 
+                            getDataType(yytext()), 
+                            addSymbolTableEntry(yytext()));
             }
           case 47: break;
           case 9: 

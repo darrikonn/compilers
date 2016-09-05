@@ -172,13 +172,13 @@ class Lexer {
 
   private static final String ZZ_ACTION_PACKED_0 =
     "\1\0\1\1\2\2\1\3\1\4\1\5\1\6\1\7"+
-    "\2\10\1\5\1\11\1\12\1\13\1\14\1\15\2\1"+
-    "\10\5\1\16\1\17\1\20\1\21\1\22\1\23\1\2"+
-    "\1\0\1\24\1\25\2\0\1\5\1\26\1\27\1\30"+
-    "\1\31\1\32\1\33\4\5\1\34\5\5\2\0\1\10"+
-    "\1\0\2\10\1\35\3\5\1\36\4\5\1\37\1\5"+
-    "\1\0\1\2\3\5\1\40\1\5\1\41\1\42\1\5"+
-    "\1\43\3\5\1\44\1\5\1\45\1\46\1\5\1\47";
+    "\2\10\1\5\1\11\1\12\1\1\1\13\1\14\2\1"+
+    "\10\5\1\15\1\16\1\17\1\20\1\21\1\22\1\2"+
+    "\1\0\1\23\1\24\2\0\1\5\1\25\1\26\1\27"+
+    "\1\30\1\31\1\32\4\5\1\33\5\5\2\0\1\10"+
+    "\1\0\2\10\1\34\3\5\1\35\4\5\1\36\1\5"+
+    "\1\0\1\2\3\5\1\37\1\5\1\40\1\41\1\5"+
+    "\1\42\3\5\1\43\1\5\1\44\1\45\1\5\1\46";
 
   private static int [] zzUnpackAction() {
     int [] result = new int[93];
@@ -445,13 +445,19 @@ class Lexer {
 
   /* user code: */
     SymbolTable sym = new SymbolTable();
-    private SymbolTableEntry AddSymbolTableEntry(Object entry) {
+    private SymbolTableEntry addSymbolTableEntry(Object entry) {
         SymbolTableEntry tableEntry;
         if ((tableEntry = sym.findSymbolTableEntry(entry)) == null) {
             return sym.addSymbolTableEntry(yytext());
         }
 
         return tableEntry;
+    }
+
+    private DataType getDataType(String value) {
+        return value.contains(".") || value.contains("E") 
+                ? DataType.REAL 
+                : DataType.INT;
     }
 
 
@@ -827,166 +833,164 @@ class Lexer {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1: 
-            { return new Token(TokenCode.ERR_ILL_CHAR);
+            { // return a symbol table entry dummy to show incorrect symbol.
+                    // it is not added to the symbol table entry list.
+                    return new Token(TokenCode.ERR_ILL_CHAR, new SymbolTableEntry(yytext()));
             }
-          case 40: break;
+          case 39: break;
           case 2: 
             { /* Do Nothing */
             }
-          case 41: break;
+          case 40: break;
           case 3: 
             { return new Token(TokenCode.MULOP, OpType.DIV);
             }
-          case 42: break;
+          case 41: break;
           case 4: 
             { return new Token(TokenCode.MULOP, OpType.MUL);
             }
-          case 43: break;
+          case 42: break;
           case 5: 
             { if (yytext().length() > 32) {
                         return new Token(TokenCode.ERR_LONG_ID);
                     }
-                    SymbolTableEntry entry = AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.IDENTIFIER, DataType.REAL, entry);
+                    return new Token(TokenCode.IDENTIFIER, addSymbolTableEntry(yytext()));
             }
-          case 44: break;
+          case 43: break;
           case 6: 
             { return new Token(TokenCode.ADDOP, OpType.MINUS);
             }
-          case 45: break;
+          case 44: break;
           case 7: 
             { return new Token(TokenCode.ADDOP, OpType.PLUS);
             }
-          case 46: break;
+          case 45: break;
           case 8: 
-            { SymbolTableEntry entry = AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.NUMBER, DataType.INT, entry);
+            { return new Token(TokenCode.NUMBER, 
+                            getDataType(yytext()), 
+                            addSymbolTableEntry(yytext()));
             }
-          case 47: break;
+          case 46: break;
           case 9: 
             { return new Token(TokenCode.ASSIGNOP);
             }
-          case 48: break;
+          case 47: break;
           case 10: 
             { return new Token(TokenCode.MULOP, OpType.MOD);
             }
-          case 49: break;
+          case 48: break;
           case 11: 
-            { return new Token(TokenCode.NOT, OpType.NOT);
-            }
-          case 50: break;
-          case 12: 
             { return new Token(TokenCode.RELOP, OpType.LT);
             }
-          case 51: break;
-          case 13: 
+          case 49: break;
+          case 12: 
             { return new Token(TokenCode.RELOP, OpType.GT);
             }
-          case 52: break;
-          case 14: 
+          case 50: break;
+          case 13: 
             { return new Token(TokenCode.LBRACE);
             }
-          case 53: break;
-          case 15: 
+          case 51: break;
+          case 14: 
             { return new Token(TokenCode.RBRACE);
             }
-          case 54: break;
-          case 16: 
+          case 52: break;
+          case 15: 
             { return new Token(TokenCode.LPAREN);
             }
-          case 55: break;
-          case 17: 
+          case 53: break;
+          case 16: 
             { return new Token(TokenCode.RPAREN);
             }
-          case 56: break;
-          case 18: 
+          case 54: break;
+          case 17: 
             { return new Token(TokenCode.COMMA);
             }
-          case 57: break;
-          case 19: 
+          case 55: break;
+          case 18: 
             { return new Token(TokenCode.SEMICOLON);
             }
-          case 58: break;
-          case 20: 
+          case 56: break;
+          case 19: 
             { return new Token(TokenCode.INCDECOP, OpType.DEC);
             }
-          case 59: break;
-          case 21: 
+          case 57: break;
+          case 20: 
             { return new Token(TokenCode.INCDECOP, OpType.INC);
             }
-          case 60: break;
-          case 22: 
+          case 58: break;
+          case 21: 
             { return new Token(TokenCode.RELOP, OpType.EQ);
             }
-          case 61: break;
-          case 23: 
+          case 59: break;
+          case 22: 
             { return new Token(TokenCode.RELOP, OpType.NE);
             }
-          case 62: break;
-          case 24: 
+          case 60: break;
+          case 23: 
             { return new Token(TokenCode.RELOP, OpType.LE);
             }
-          case 63: break;
-          case 25: 
+          case 61: break;
+          case 24: 
             { return new Token(TokenCode.RELOP, OpType.GE);
             }
-          case 64: break;
-          case 26: 
+          case 62: break;
+          case 25: 
             { return new Token(TokenCode.ADDOP, OpType.OR);
             }
-          case 65: break;
-          case 27: 
+          case 63: break;
+          case 26: 
             { return new Token(TokenCode.MULOP, OpType.AND);
             }
-          case 66: break;
-          case 28: 
+          case 64: break;
+          case 27: 
             { return new Token(TokenCode.IF);
             }
-          case 67: break;
-          case 29: 
+          case 65: break;
+          case 28: 
             { return new Token(TokenCode.EOF);
             }
-          case 68: break;
-          case 30: 
+          case 66: break;
+          case 29: 
             { return new Token(TokenCode.INT);
             }
-          case 69: break;
-          case 31: 
+          case 67: break;
+          case 30: 
             { return new Token(TokenCode.FOR);
             }
-          case 70: break;
-          case 32: 
+          case 68: break;
+          case 31: 
             { return new Token(TokenCode.REAL);
             }
-          case 71: break;
-          case 33: 
+          case 69: break;
+          case 32: 
             { return new Token(TokenCode.ELSE);
             }
-          case 72: break;
-          case 34: 
+          case 70: break;
+          case 33: 
             { return new Token(TokenCode.VOID);
             }
-          case 73: break;
-          case 35: 
+          case 71: break;
+          case 34: 
             { return new Token(TokenCode.CLASS);
             }
-          case 74: break;
-          case 36: 
+          case 72: break;
+          case 35: 
             { return new Token(TokenCode.BREAK);
             }
-          case 75: break;
-          case 37: 
+          case 73: break;
+          case 36: 
             { return new Token(TokenCode.STATIC);
             }
-          case 76: break;
-          case 38: 
+          case 74: break;
+          case 37: 
             { return new Token(TokenCode.RETURN);
             }
-          case 77: break;
-          case 39: 
+          case 75: break;
+          case 38: 
             { return new Token(TokenCode.CONTINUE);
             }
-          case 78: break;
+          case 76: break;
           default:
             zzScanError(ZZ_NO_MATCH);
         }
