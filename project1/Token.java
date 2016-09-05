@@ -1,19 +1,22 @@
 class Token {
     private TokenCode _code;
-    private Object _symbolTableEntry;
+    private SymbolTableEntry _symbolTableEntry;
     private DataType _dataType;
     private OpType _opType; 
 
+    // key words
     public Token(TokenCode code) {
         _code = code;
     }
 
+    // operators
     public Token(TokenCode code, OpType otype) {
         _code = code;
         _opType = otype;
     }
 
-    public Token(TokenCode code, DataType dtype, Object entry) {
+    // symbol table entries
+    public Token(TokenCode code, DataType dtype, SymbolTableEntry entry) {
         _code = code;
         _dataType = dtype;
         _symbolTableEntry = entry;
@@ -23,7 +26,7 @@ class Token {
         return _code;
     }
 
-    public Object getSymbolTableEntry() {
+    public SymbolTableEntry getSymbolTableEntry() {
         return _symbolTableEntry;
     }
 

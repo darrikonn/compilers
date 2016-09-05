@@ -1,5 +1,5 @@
 import java.io.*;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 
 public class TokenDumper {
     public static void main(String[] args) throws IOException {
@@ -11,27 +11,27 @@ public class TokenDumper {
             TokenCode code = t.getTokenCode();
             System.out.print(code.toString());
 
-            // print symbol table entry
-            Object entry;
+            // print symbol table entry or operation
+            SymbolTableEntry entry;
             OpType op;
             if ((entry = t.getSymbolTableEntry()) != null) {
-                System.out.print("(" + entry + ")"); 
+                System.out.print("(" + entry.getLexeme() + ")"); 
             } else if ((op = t.getOperation()) != null) {
                 System.out.print("(" + op + ")"); 
             }
-            System.out.print(" ");
 
             if (code == TokenCode.EOF) {
                 System.out.println("\n");
                 break;
             }
+            System.out.print(" ");
         }
 
         // print out the symbol table
-        LinkedHashSet<Object> mySet = lexer.sym.getSymbolTableEntries();
+        ArrayList<SymbolTableEntry> entries = lexer.sym.getSymbolTableEntries();
         int cnt = 0;
-        for (Object key : mySet) {
-            System.out.println(cnt++ + "  " + key);
+        for (SymbolTableEntry entry : entries) {
+            System.out.println(cnt++ + "  " + entry.getLexeme());
         }
     }
 }

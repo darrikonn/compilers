@@ -1,20 +1,30 @@
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 
 class SymbolTable {
-    private LinkedHashSet<Object> _symbolTableEntry;
+    private ArrayList<SymbolTableEntry> _symbolTableEntries;
+
     public SymbolTable() {
-        _symbolTableEntry = new LinkedHashSet<Object>();
+        _symbolTableEntries = new ArrayList<SymbolTableEntry>();
     }
 
-    public Object findSymbolTableEntry(Object key) {
-        return _symbolTableEntry.contains(key) ? key : null;
+    public SymbolTableEntry findSymbolTableEntry(Object lexeme) {
+        for (SymbolTableEntry s : _symbolTableEntries) {
+            if (s.getLexeme().equals(lexeme)) {
+                return s;
+            }
+        }
+
+        return null;
     }
 
-    public void addSymbolTableEntry(Object key) {
-        _symbolTableEntry.add(key);
+    public SymbolTableEntry addSymbolTableEntry(Object lexeme) {
+        SymbolTableEntry entry = new SymbolTableEntry(lexeme);
+        _symbolTableEntries.add(entry);
+
+        return entry;
     }
     
-    public LinkedHashSet<Object> getSymbolTableEntries() {
-        return _symbolTableEntry;
+    public ArrayList<SymbolTableEntry> getSymbolTableEntries() {
+        return _symbolTableEntries;
     }
 }

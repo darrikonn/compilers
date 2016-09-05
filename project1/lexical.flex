@@ -12,10 +12,13 @@
 
 %{
     SymbolTable sym = new SymbolTable();
-    private void AddSymbolTableEntry(Object entry) {
-        if (sym.findSymbolTableEntry(entry) == null) {
-            sym.addSymbolTableEntry(yytext());
+    private SymbolTableEntry AddSymbolTableEntry(Object entry) {
+        SymbolTableEntry tableEntry;
+        if ((tableEntry = sym.findSymbolTableEntry(entry)) == null) {
+            return sym.addSymbolTableEntry(yytext());
         }
+
+        return tableEntry;
     }
 %}
 
@@ -34,11 +37,11 @@ CommentContent       = ( [^*] | \*+ [^/*] )*
 Comment = {TraditionalComment} | {EndOfLineComment} | {DocumentationComment}
 WhiteSpace     = {LineTerminator} | [ \t\f]
 Identifier  = [:jletter:][:jletterdigit:]*
-Sign        = \-?
+Sign        = (\-|\+)?
 Integer     = 0 | [1-9][0-9]*
-Fraction    = (.{Integer}+)?
+Fraction    = (\.{Integer}+)?
 Exponent    = (E{Sign}{Integer})?
-Number      = {Sign} {Integer} {Fraction} {Exponent}
+Number      = {Integer}{Fraction}{Exponent}
 Unknown     = .
 
 %%
@@ -67,14 +70,19 @@ Unknown     = .
 /* Logical operators */
 "||"        { return new Token(TokenCode.ADDOP, OpType.OR); }
 "&&"        { return new Token(TokenCode.MULOP, OpType.AND); }
+"!"         { return new Token(TokenCode.NOT, OpType.NOT); }
 
 /* Key words */
-"class"     { return new Token(TokenCode.CLASS); }
-"void"      { return new Token(TokenCode.VOID); }
-"if"        { return new Token(TokenCode.IF); }
-"else"      { return new Token(TokenCode.ELSE); }
-"real"      { return new Token(TokenCode.REAL); }
-"int"       { return new Token(TokenCode.INT); }
+"class"     { return new Token(TokenCode.CLASS); }      // instances
+"int"       { return new Token(TokenCode.INT); }        // type
+"real"      { return new Token(TokenCode.REAL); }       // type
+"void"      { return new Token(TokenCode.VOID); }       // return type
+"if"        { return new Token(TokenCode.IF); }         // statement
+"else"      { return new Token(TokenCode.ELSE); }       // statement
+"for"       { return new Token(TokenCode.FOR); }        // loop
+"return"    { return new Token(TokenCode.RETURN); }     // actions
+"break"     { return new Token(TokenCode.BREAK); }      // actions
+"continue"  { return new Token(TokenCode.CONTINUE); }   // actions
 
 /* Modifiers */
 "static"    { return new Token(TokenCode.STATIC); }
@@ -95,20 +103,20 @@ Unknown     = .
                     if (yytext().length() > 32) {
                         return new Token(TokenCode.ERR_LONG_ID);
                     }
-                    AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.IDENTIFIER, DataType.REAL, yytext()); 
+                    SymbolTableEntry entry = AddSymbolTableEntry(yytext());
+                    return new Token(TokenCode.IDENTIFIER, DataType.REAL, entry); 
                 }
 
 /* Number */
 {Number}        { 
-                    AddSymbolTableEntry(yytext());
-                    return new Token(TokenCode.NUMBER, DataType.INT, yytext()); 
+                    SymbolTableEntry entry = AddSymbolTableEntry(yytext());
+                    return new Token(TokenCode.NUMBER, DataType.INT, entry); 
                 }
 
 /* Other */
 {WhiteSpace}    { /* Do Nothing */ }
 {Comment}       { /* Do Nothing */ }
-{Unknown}       { return new Token(TokenCode.ERR_ILL_CHAR); }
+{Unknown}       { return new Token(TokenCode.ERR_ILL_CHAR); } // do not have to return symbol
 
 
 // Hester will be dead by daylight!

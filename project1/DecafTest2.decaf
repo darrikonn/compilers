@@ -15,7 +15,11 @@ class Program {
             number = 0.000000000000004;
             number = 1236789.12345;
         } else {
+            number = 12.34-E7;
             number = 12.34E7;
+            number = 1-2.34E8;
+            number = 12.34E-8;
+            number = -12.34E9;
         }
 
         i = i + j;
