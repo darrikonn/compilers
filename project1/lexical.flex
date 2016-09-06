@@ -20,16 +20,10 @@
 
         return tableEntry;
     }
-
-    private DataType getDataType(String value) {
-        return value.contains(".") || value.contains("E") 
-                ? DataType.REAL 
-                : DataType.INT;
-    }
 %}
 
 %eofval{
-    return new Token(TokenCode.EOF);
+    return new Token(TokenCode.EOF, OpType.NONE, DataType.NONE);
 %eofval}
 
 /*********** Definitions for patterns of tokens  ***********/
@@ -45,78 +39,82 @@ WhiteSpace     = {LineTerminator} | [ \t\f]
 Identifier  = [:jletter:][:jletterdigit:]*
 Sign        = (\-|\+)?
 Integer     = 0 | [1-9][0-9]*
-Fraction    = (\.{Integer}+)?
+Fraction    = (\.{Integer}+)
 Exponent    = (E{Sign}{Integer})?
-Number      = {Integer}{Fraction}{Exponent}
+RealNumber  = {Integer}{Fraction}{Exponent}
+IntNumber   = {Integer}{Exponent}
 Unknown     = .
 
 %%
 
 /*********** Translation rules ***********/
 /* Assignment operators */
-"="         { return new Token(TokenCode.ASSIGNOP); }
+"="         { return new Token(TokenCode.ASSIGNOP, OpType.ASSIGN, DataType.OP); }
 
 /* Arithmetic operators */
-"+"         { return new Token(TokenCode.ADDOP, OpType.PLUS); }
-"-"         { return new Token(TokenCode.ADDOP, OpType.MINUS); }
-"*"         { return new Token(TokenCode.MULOP, OpType.MUL); }
-"/"         { return new Token(TokenCode.MULOP, OpType.DIV); }
-"%"         { return new Token(TokenCode.MULOP, OpType.MOD); }
-"++"        { return new Token(TokenCode.INCDECOP, OpType.INC); }
-"--"        { return new Token(TokenCode.INCDECOP, OpType.DEC); }
+"+"         { return new Token(TokenCode.ADDOP, OpType.PLUS, DataType.OP); }
+"-"         { return new Token(TokenCode.ADDOP, OpType.MINUS, DataType.OP); }
+"*"         { return new Token(TokenCode.MULOP, OpType.MULT, DataType.OP); }
+"/"         { return new Token(TokenCode.MULOP, OpType.DIV, DataType.OP); }
+"%"         { return new Token(TokenCode.MULOP, OpType.MOD, DataType.OP); }
+"++"        { return new Token(TokenCode.INCDECOP, OpType.INC, DataType.OP); }
+"--"        { return new Token(TokenCode.INCDECOP, OpType.DEC, DataType.OP); }
 
 /* Relational operators */
-"=="        { return new Token(TokenCode.RELOP, OpType.EQ); }
-"!="        { return new Token(TokenCode.RELOP, OpType.NE); }
-"<"         { return new Token(TokenCode.RELOP, OpType.LT); }
-"<="        { return new Token(TokenCode.RELOP, OpType.LE); }
-">"         { return new Token(TokenCode.RELOP, OpType.GT); }
-">="        { return new Token(TokenCode.RELOP, OpType.GE); }
+"=="        { return new Token(TokenCode.RELOP, OpType.EQUAL, DataType.OP); }
+"!="        { return new Token(TokenCode.RELOP, OpType.NOT_EQUAL, DataType.OP); }
+"<"         { return new Token(TokenCode.RELOP, OpType.LT, DataType.OP); }
+"<="        { return new Token(TokenCode.RELOP, OpType.LTE, DataType.OP); }
+">"         { return new Token(TokenCode.RELOP, OpType.GT, DataType.OP); }
+">="        { return new Token(TokenCode.RELOP, OpType.GTE, DataType.OP); }
 
 /* Logical operators */
-"||"        { return new Token(TokenCode.ADDOP, OpType.OR); }
-"&&"        { return new Token(TokenCode.MULOP, OpType.AND); }
+"||"        { return new Token(TokenCode.ADDOP, OpType.OR, DataType.OP); }
+"&&"        { return new Token(TokenCode.MULOP, OpType.AND, DataType.OP); }
 
 /* Key words */
-"class"     { return new Token(TokenCode.CLASS); }      // instances
-"int"       { return new Token(TokenCode.INT); }        // type
-"real"      { return new Token(TokenCode.REAL); }       // type
-"void"      { return new Token(TokenCode.VOID); }       // return type
-"if"        { return new Token(TokenCode.IF); }         // statement
-"else"      { return new Token(TokenCode.ELSE); }       // statement
-"for"       { return new Token(TokenCode.FOR); }        // loop
-"return"    { return new Token(TokenCode.RETURN); }     // actions
-"break"     { return new Token(TokenCode.BREAK); }      // actions
-"continue"  { return new Token(TokenCode.CONTINUE); }   // actions
+"class"     { return new Token(TokenCode.CLASS, OpType.NONE, DataType.KEYWORD); }      // instances
+"int"       { return new Token(TokenCode.INT, OpType.NONE, DataType.KEYWORD); }        // type
+"real"      { return new Token(TokenCode.REAL, OpType.NONE, DataType.KEYWORD); }       // type
+"void"      { return new Token(TokenCode.VOID, OpType.NONE, DataType.KEYWORD); }       // return type
+"if"        { return new Token(TokenCode.IF, OpType.NONE, DataType.KEYWORD); }         // statement
+"else"      { return new Token(TokenCode.ELSE, OpType.NONE, DataType.KEYWORD); }       // statement
+"for"       { return new Token(TokenCode.FOR, OpType.NONE, DataType.KEYWORD); }        // loop
+"return"    { return new Token(TokenCode.RETURN, OpType.NONE, DataType.KEYWORD); }     // actions
+"break"     { return new Token(TokenCode.BREAK, OpType.NONE, DataType.KEYWORD); }      // actions
+"continue"  { return new Token(TokenCode.CONTINUE, OpType.NONE, DataType.KEYWORD); }   // actions
 
 /* Modifiers */
-"static"    { return new Token(TokenCode.STATIC); }
+"static"    { return new Token(TokenCode.STATIC, OpType.NONE, DataType.KEYWORD); }
 
 /* Symbols */
-"{"         { return new Token(TokenCode.LBRACE); }
-"}"         { return new Token(TokenCode.RBRACE); }
-"("         { return new Token(TokenCode.LPAREN); }
-")"         { return new Token(TokenCode.RPAREN); }
-","         { return new Token(TokenCode.COMMA); }
-";"         { return new Token(TokenCode.SEMICOLON); }
-
-/* EOF */
-"EOF"       { return new Token(TokenCode.EOF); }
+"{"         { return new Token(TokenCode.LBRACE, OpType.NONE, DataType.NONE); }
+"}"         { return new Token(TokenCode.RBRACE, OpType.NONE, DataType.NONE); }
+"("         { return new Token(TokenCode.LPAREN, OpType.NONE, DataType.NONE); }
+")"         { return new Token(TokenCode.RPAREN, OpType.NONE, DataType.NONE); }
+"]"         { return new Token(TokenCode.RBRACKET, OpType.NONE, DataType.NONE); }
+"["         { return new Token(TokenCode.LBRACKET, OpType.NONE, DataType.NONE); }
+"!"         { return new Token(TokenCode.NOT, OpType.NONE, DataType.NONE); }
+","         { return new Token(TokenCode.COMMA, OpType.NONE, DataType.NONE); }
+";"         { return new Token(TokenCode.SEMICOLON, OpType.NONE, DataType.NONE); }
 
 /* Identifier */
 {Identifier}    { 
                     if (yytext().length() > 32) {
                         // return a symbol table entry dummy to show incorrect symbol.
                         // it is not added to the symbol table entry list.
-                        return new Token(TokenCode.ERR_LONG_ID, new SymbolTableEntry(yytext()));
+                        return new Token(TokenCode.ERR_LONG_ID, OpType.NONE, DataType.ID, 
+                                new SymbolTableEntry(yytext()));
                     }
-                    return new Token(TokenCode.IDENTIFIER, addSymbolTableEntry(yytext())); 
+                    return new Token(TokenCode.IDENTIFIER, OpType.NONE, DataType.ID, 
+                            addSymbolTableEntry(yytext())); 
                 }
 
 /* Number */
-{Number}        { return new Token(TokenCode.NUMBER, 
-                            getDataType(yytext()), 
-                            addSymbolTableEntry(yytext())); }
+{RealNumber}    { return new Token(TokenCode.NUMBER, OpType.NONE, DataType.REAL, 
+                          addSymbolTableEntry(yytext())); }
+{IntNumber}     { return new Token(TokenCode.NUMBER, OpType.NONE, DataType.INT,
+                          addSymbolTableEntry(yytext())); }
 
 /* Other */
 {WhiteSpace}    { /* Do Nothing */ }
@@ -124,7 +122,8 @@ Unknown     = .
 {Unknown}       { 
                     // return a symbol table entry dummy to show incorrect symbol.
                     // it is not added to the symbol table entry list.
-                    return new Token(TokenCode.ERR_ILL_CHAR, new SymbolTableEntry(yytext())); 
+                    return new Token(TokenCode.ERR_ILL_CHAR, OpType.NONE, DataType.NONE, 
+                            new SymbolTableEntry(yytext())); 
                 } 
 
 

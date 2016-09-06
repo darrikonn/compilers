@@ -4,26 +4,17 @@ class Token {
     private DataType _dataType;
     private OpType _opType; 
 
-    // key words
-    public Token(TokenCode code) {
-        _code = code;
-    }
-
-    // operators
-    public Token(TokenCode code, OpType otype) {
+    // non symbol table entries
+    public Token(TokenCode code, OpType otype, DataType dtype) {
         _code = code;
         _opType = otype;
+        _dataType = dtype;
     }
 
-    // symbol table entries (identifiers)
-    public Token(TokenCode code, SymbolTableEntry entry) {
+    // symbol table entries (number|id)
+    public Token(TokenCode code, OpType otype, DataType dtype, SymbolTableEntry entry) {
         _code = code;
-        _symbolTableEntry = entry;
-    }
-
-    // symbol table entries (numbers)
-    public Token(TokenCode code, DataType dtype, SymbolTableEntry entry) {
-        _code = code;
+        _opType = otype;
         _dataType = dtype;
         _symbolTableEntry = entry;
     }
@@ -32,11 +23,15 @@ class Token {
         return _code;
     }
 
-    public SymbolTableEntry getSymbolTableEntry() {
-        return _symbolTableEntry;
+    public DataType getDataType() {
+        return _dataType;
     }
 
-    public OpType getOperation() {
+    public OpType getOpType() {
         return _opType;
+    }
+
+    public SymbolTableEntry getSymbolTableEntry() {
+        return _symbolTableEntry;
     }
 }

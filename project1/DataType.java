@@ -1,3 +1,3 @@
 public enum DataType {
-    INT, REAL
+    NONE, INT, REAL, ID, KEYWORD, OP
 }

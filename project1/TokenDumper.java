@@ -16,7 +16,8 @@ public class TokenDumper {
             OpType op;
             if ((entry = t.getSymbolTableEntry()) != null) {
                 System.out.print("(" + entry.getLexeme() + ")"); 
-            } else if ((op = t.getOperation()) != null) {
+            } else if ((op = t.getOpType()) != OpType.NONE && 
+                        code != TokenCode.ASSIGNOP) {
                 System.out.print("(" + op + ")"); 
             }
 

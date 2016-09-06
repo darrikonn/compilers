@@ -18,13 +18,18 @@ class Program {
             **** whatsup
         */
         // another comment
-        [] // illegal characters
+        real a = bb[20];
         if (k < j) {
             i++;
         } else {
             i = i + 2;
         }
-        i = i * 8;
+        if (!i) {
+            i = i * 8;
+        }
+
+        // illegal characters
+        @@
         
         for (int o = 0; o < 5; o++) {
             if (o == 0) {

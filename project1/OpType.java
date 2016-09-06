@@ -1,3 +1,4 @@
 public enum OpType {
-    PLUS, MINUS, MUL, DIV, MOD, INC, DEC, LT, GT, EQ, NE, GE, LE, OR, AND
+    NONE, INC, DEC, EQUAL, NOT_EQUAL, LT, GT, LTE, GTE, 
+    PLUS, MINUS, OR, MULT, DIV, MOD, AND, ASSIGN 
 }
