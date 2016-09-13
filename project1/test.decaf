@@ -29,7 +29,7 @@ class Program {
         }
 
         // illegal characters
-        @@
+        @$
         
         for (int o = 0; o < 5; o++) {
             if (o == 0) {

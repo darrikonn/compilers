@@ -35,8 +35,11 @@ DocumentationComment = "/**" {CommentContent} "*"+ "/"
 CommentContent       = ( [^*] | \*+ [^/*] )*
 
 Comment = {TraditionalComment} | {EndOfLineComment} | {DocumentationComment}
-WhiteSpace     = {LineTerminator} | [ \t\f]
-Identifier  = [:jletter:][:jletterdigit:]*
+WhiteSpace  = {LineTerminator} | [ \t\f]
+Letter      = [A-Za-z] | _
+Digit       = [0-9]
+Identifier  = {Letter}({Letter}|{Digit})* 
+//Identifier  = [:jletter:][:jletterdigit:]*
 Sign        = (\-|\+)?
 Integer     = 0 | [1-9][0-9]*
 Fraction    = (\.{Integer}+)
