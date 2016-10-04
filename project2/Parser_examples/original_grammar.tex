@@ -1,0 +1,98 @@
+\documentclass{article}
+
+\usepackage[icelandic]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1, OT1]{fontenc}
+
+\DeclareTextSymbolDefault{\dh}{T1}
+\DeclareTextSymbolDefault{\th}{T1}
+\DeclareTextSymbolDefault{\TH}{T1}
+\DeclareTextSymbolDefault{\DH}{T1}
+
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\begin{document}
+
+\newcommand{\token}[1]
+{ \textbf{#1} }
+
+\newcommand{\nont}[1]
+{ \emph{#1} }
+
+\newcommand{\lnont}[1]
+{ \\
+\emph{#1} & $::=$ & 
+}
+
+\begin{tabular}{r l l}
+
+	\lnont{program} \token{class} \token{id}  \token{\{}  \nont{variable\_declarations} \nont{method\_declarations} \token{\}} \\
+	
+	\lnont{variable\_declarations} \nont{variable\_declarations} \nont{type} \nont{variable\_list} \token{$;$} $|$ $\epsilon$ \\
+	
+	\lnont{type}  \token{int} $|$ \token{real} \\
+	
+	\lnont{variable\_list} \nont{variable} $|$ \nont{variable\_list} \token{$,$} \nont{variable} \\
+
+	\lnont{variable} \token{id} $|$ \token{id} \token{$[$} \token{num} \token{$]$} \\ 
+
+	\lnont{method\_declarations}  \nont{method\_declaration} \nont{more\_method\_declarations} \\
+	
+	\lnont{more\_method\_declarations} \nont{more\_method\_declarations} \nont{method\_declaration} $|$ $\epsilon$ \\
+
+	\lnont{method\_declaration} \token{static} \nont{method\_return\_type} \token{id} \token{$($} \nont{parameters} \token{$)$} \\
+	& &  \token{\{}  \nont{variable\_declarations} \nont{statement\_list} \token{\}} \\
+
+	\lnont{method\_return\_type} \nont{type} $|$ \token{void} \\
+
+	\lnont{parameters} \nont{parameter\_list} $|$ $\epsilon$ \\ 
+
+	\lnont{parameter\_list} \nont{type} \token{id} $|$ \nont{parameter\_list} \token{$,$} \nont{type} \token{id} \\
+	
+	\lnont{statement\_list} \nont{statement\_list} \nont{statement} $|$ $\epsilon$ \\
+
+	\lnont{statement} \nont{variable\_loc} \token{$=$} \nont{expression} \token{$;$} \\
+              		& & $|$  \token{id} \token{$($} \nont{expression\_list} \token{$)$} \token{$;$} \\
+              		& & $|$  \token{if} \token{$($} \nont{expression} \token{$)$} \nont{statement\_block} \nont{optional\_else} \\
+              		& & $|$  \token{for} \token{$($} \nont{variable\_loc} \token{$=$} \nont{expression} \token{$;$} \nont{expression} \token{$;$} \nont{incr\_decr\_var} \\ & & \hspace{0.2cm} \token{$)$} \nont{statement\_block} \\
+              		& & $|$  \token{return} \nont{optional\_expression} \token{$;$} \\
+              		& & $|$  \token{break} \token{$;$} \\
+              		& & $|$  \token{continue} \token{$;$} \\
+              		& & $|$  \nont{incr\_decr\_var} \token{$;$} \\ 
+              		& & $|$  \nont{statement\_block} \\
+		
+	\lnont{optional\_expression} \nont{expression} $|$ $\epsilon$ \\
+
+	\lnont{statement\_block} \token{$\{$} \nont{statement\_list} \token{$\}$} \\
+
+	\lnont{incr\_decr\_var} \nont{variable\_loc} \token{incdecop} \\
+
+	\lnont{optional\_else} \token{else} \nont{statement\_block} $|$ $\epsilon$ \\
+\end{tabular}
+\newpage
+\begin{tabular}{r l l}
+	\lnont{expression\_list} \nont{expression} \nont{more\_expressions} $|$ $\epsilon$ \\
+
+	\lnont{more\_expressions} \token{$,$} \nont{expression} \nont{more\_expressions} $|$ $\epsilon$ \\
+
+	\lnont{expression}  \nont{simple\_expression} $|$ \nont{simple\_expression} \token{relop} \nont{simple\_expression} \\
+
+	\lnont{simple\_expression} \nont{term} $|$ \nont{sign} \nont{term} $|$ \nont{simple\_expression} \token{addop} \nont{term} \\
+
+	\lnont{term} \nont{factor} $|$ \nont{term} \token{mulop} \nont{factor} \\
+
+	\lnont{factor} \nont{variable\_loc} $|$ \token{id} \token{$($} \nont{expression\_list} \token{$)$} $|$ \token{num} $|$ \token{$($} \nont{expression} \token{$)$} $|$ \token{$!$} \nont{factor} \\
+
+	\lnont{variable\_loc} \token{id} $|$ \token{id} \token{$[$} \nont{expression} \token{$]$} \\
+
+	\lnont{sign} \token{$+$} $|$ \token{$-$} \\
+
+
+\end{tabular}
+
+\end{document}
