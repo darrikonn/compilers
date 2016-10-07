@@ -1,5 +1,5 @@
 program -> class id { variable_declarations method_declarations }
-variable_declarations -> type variable_list variable_declarations | E
+variable_declarations -> type variable_list ; variable_declarations | E
 type -> int | real
 variable_list -> variable variable_list'
 variable_list' -> , variable variable_list' | E
