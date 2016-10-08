@@ -3,32 +3,87 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Parser {
-    private static Lexer _lexer;
-    private static Token _token;
-    private static TokenCode _lookahead;
-    private static ArrayList<TokenCode> _expression;
+    private Lexer _lexer;
+    private Token _token;
+    private TokenCode _lookahead;
+    private OpType _opType;
 
-    public Parser() {
+    private ArrayList<TokenCode> _expression, _statementList;
+    private String _decafCode;
+    private int _lineNumber;
+
+    public Parser(Lexer lexer) {
+        _lexer = lexer;
+
+        // used for validation
         _expression = new ArrayList<TokenCode> (Arrays.asList(
             TokenCode.IF, TokenCode.ADDOP, TokenCode.NOT, TokenCode.LPAREN, 
             TokenCode.NUMBER, TokenCode.IDENTIFIER 
         ));
+        _statementList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
+            TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
+            TokenCode.CONTINUE
+        ));
+
+        _decafCode = "";
+        _lineNumber = 0;
     }
 
     public static void main(String[] args) throws IOException {
-        _lexer = new Lexer(new FileReader(args[0]));
+        Parser p = new Parser(new Lexer(new FileReader(args[0])));
+        p.parse();
+    }
+
+    public void parse() {
         readNextToken();
         program();
     }
 
-    private static void readNextToken() {
+    private void match(TokenCode code) { // nota yypushback
+        if (_lookahead == code) {
+            readNextToken();
+            return;
+        }
+
+        printError(code, _lookahead);
+    }
+
+    private void match(OpType type) {
+        if (_opType == type) {
+            readNextToken();
+            return;
+        }
+
+        printError(type, _opType);
+    }
+
+    private void printError(Object expected, Object value) {
+        System.out.println(_token.getLineNumber() + " : " + _token.getColumnNumber() + " " + 
+                _lexer + "Error: expected \'" + expected + "\', got \'" + value + "\'");
+        System.out.println(_lexer.yytext());
+        System.out.println(_lexer.yylength());
+        System.exit(-1);
+    }
+
+    private void readNextToken() {
         try {
             _token = _lexer.yylex();
 
             _lookahead = _token.getTokenCode();
+            _opType = _token.getOpType();
+
+
+            int currentLine = _token.getLineNumber();
+            if (currentLine > _lineNumber) {
+                _lineNumber = currentLine;
+                _decafCode = "";
+            } else {
+                
+            }
+
+
             if (_lookahead == TokenCode.EOF) {
                 System.out.println("No errors");
-                System.exit(1);
             }
         } catch (Exception e) {
             e.printStackTrace(System.out);
@@ -36,21 +91,10 @@ public class Parser {
         }
     }
 
-    private static void match(TokenCode code) { // nota yypushback
-        if (_lookahead == code) {
-            readNextToken();
-            return;
-        }
-
-        System.out.println(_token.getLineNumber() + " : " + _token.getColumnNumber() + " " + _lexer + "Error: expected \'" + _lookahead + "\', got \'" + code + "\'");
-        //System.out.println(_lexer.yylex());
-        //System.out.println(_lexer.yylval());
-        System.out.println(_lexer.yytext());
-        System.out.println(_lexer.yylength());
-        System.exit(-1);
-    }
-
-    private static void program() {
+    /*
+     * Grammar
+     */
+    private void program() {
         match(TokenCode.CLASS);
         match(TokenCode.IDENTIFIER);
         match(TokenCode.LBRACE);
@@ -59,8 +103,8 @@ public class Parser {
         match(TokenCode.RBRACE);
     }
 
-    private static void variable_declarations() { // Epsilon x
-        if (isType()) {
+    private void variable_declarations() { // Epsilon x
+        if (is_type()) {
             type();
             variable_list();
             match(TokenCode.SEMICOLON);
@@ -68,7 +112,7 @@ public class Parser {
         }
     }
 
-    private static void type() {
+    private void type() {
         if (_lookahead == TokenCode.INT) {
             match(TokenCode.INT);
         } else {
@@ -76,29 +120,24 @@ public class Parser {
         }
     }
 
-    private static boolean isType() {
-        return _lookahead == TokenCode.INT || _lookahead == TokenCode.REAL;
-    }
-
-    private static void variable_list() {
+    private void variable_list() {
         variable();
         variable_list2();
     }
 
-    private static void variable_list2() { // Epsilon x
-        if (isComma()) {
+    private void variable_list2() { // Epsilon x
+        if (_lookahead == TokenCode.COMMA) {
             match(TokenCode.COMMA);
-            variable();
-            variable_list2();
+            variable_list();
         }
     }
 
-    private static void variable() {
+    private void variable() {
         match(TokenCode.IDENTIFIER);
         variable2();
     }
 
-    private static void variable2() { // Epsilon x
+    private void variable2() { // Epsilon x
         if (_lookahead == TokenCode.LBRACKET) {
             match(TokenCode.LBRACKET);
             match(TokenCode.NUMBER);
@@ -106,23 +145,18 @@ public class Parser {
         }
     }
 
-    private static void method_declarations() {
+    private void method_declarations() {
         method_declaration();
         more_method_declarations();
     }
 
-    private static void more_method_declarations() { // Epsilon x
-        if (isStatic()) {
-            method_declaration();
-            more_method_declarations();
+    private void more_method_declarations() { // Epsilon x
+        if (_lookahead == TokenCode.STATIC) {
+            method_declarations();
         }
     }
 
-    private static boolean isStatic() {
-        return _lookahead == TokenCode.STATIC;
-    }
-
-    private static void method_declaration() {
+    private void method_declaration() {
         match(TokenCode.STATIC);
         method_return_type();
         match(TokenCode.IDENTIFIER);
@@ -135,54 +169,44 @@ public class Parser {
         match(TokenCode.RBRACE);
     }
 
-    private static void method_return_type() {
-        if (_lookahead == TokenCode.VOID) {
-            match(TokenCode.VOID);
-        } else {
+    private void method_return_type() {
+        if (is_type()) {
             type();
+        } else {
+            match(TokenCode.VOID);
         }
     }
 
-    private static void parameters() { // Epsilon x
-        if (isType()) {
+    private void parameters() { // Epsilon x
+        if (is_type()) {
             parameter_list();
         }
     }
 
-    private static void parameter_list() {
+    private void parameter_list() {
         type();
         match(TokenCode.IDENTIFIER);
         parameter_list2();
     }
 
-    private static void parameter_list2() { // Epsilon x
-        if (isComma()) {
+    private void parameter_list2() { // Epsilon x
+        if (_lookahead == TokenCode.COMMA) {
             match(TokenCode.COMMA);
-            type();
-            match(TokenCode.IDENTIFIER);
-            parameter_list2();
+            parameter_list();
         }
     }
 
-    private static boolean isComma() {
-        return _lookahead == TokenCode.COMMA;
-    }
-
-    private static void statement_list() { // Epsilon x
-        if (_lookahead == TokenCode.IF || _lookahead == TokenCode.FOR || _lookahead == TokenCode.LBRACE ||
-                _lookahead == TokenCode.IDENTIFIER || _lookahead == TokenCode.RETURN || 
-                _lookahead == TokenCode.BREAK || _lookahead == TokenCode.CONTINUE) {
+    private void statement_list() { // Epsilon x
+        if (is_statement_list()) {
             statement();
             statement_list();
         }
     }
 
-    private static void statement() {
+    private void statement() {
         if (_lookahead == TokenCode.IF) {
             match(TokenCode.IF);
-            match(TokenCode.LPAREN);
-            expression();
-            match(TokenCode.RPAREN);
+            parenthesized_expression();
             statement_block();
             optional_else();
         } else if (_lookahead == TokenCode.FOR) {
@@ -205,13 +229,11 @@ public class Parser {
         }
     }
 
-    private static void statement2() {
+    private void statement2() {
         if (_lookahead == TokenCode.IDENTIFIER) {
             match(TokenCode.IDENTIFIER);
             if (_lookahead == TokenCode.LPAREN) {
-                match(TokenCode.LPAREN);
-                expression_list();
-                match(TokenCode.RPAREN);
+                parenthesized_expression_list();
             } else {
                 variable_loc2();
                 if (_lookahead == TokenCode.ASSIGNOP) {
@@ -228,70 +250,81 @@ public class Parser {
             match(TokenCode.BREAK);
         } else if (_lookahead == TokenCode.CONTINUE) {
             match(TokenCode.CONTINUE);
-        } else {
-        } 
+        }
     }
 
-    private static void optional_expression() { // Epsilon x
-        if (isExpression()) {
+    private void optional_expression() { // Epsilon x
+        if (is_expression()) {
             expression();
         }
     }
 
-    private static void statement_block() {
+    private void statement_block() {
         match(TokenCode.LBRACE);
         statement_list();
         match(TokenCode.RBRACE);
     }
 
-    private static void incr_decr_var() {
+    private void incr_decr_var() {
         variable_loc();
         match(TokenCode.INCDECOP);
     }
 
-    private static void optional_else() { // Epsilon x
+    private void optional_else() { // Epsilon x
         if (_lookahead == TokenCode.ELSE) {
             match(TokenCode.ELSE);
             statement_block();
         }
     }
 
-    private static void expression_list() { // Epsilon x
-        if (isExpression()) {
+    private void expression_list() { // Epsilon x
+        if (is_expression()) {
             expression();
             more_expressions();
         }
     }
 
-    private static void more_expressions() { // Epsilon x
-        if (isComma()) {
+    private void parenthesized_expression_list() {
+        match(TokenCode.LPAREN);
+        expression_list();
+        match(TokenCode.RPAREN);
+    }
+
+
+    private void more_expressions() { // Epsilon x
+        if (_lookahead == TokenCode.COMMA) {
             match(TokenCode.COMMA);
-            expression();
-            more_expressions();
+            expression_list();
         }
     }
 
-    private static void expression() {
+    private void expression() {
         simple_expression();
         expression2();
     }
 
-    private static void expression2() { // Epsilon x
+    private void parenthesized_expression() {
+        match(TokenCode.LPAREN);
+        expression();
+        match(TokenCode.RPAREN);
+    }
+
+    private void expression2() { // Epsilon x
         if (_lookahead == TokenCode.RELOP) {
             match(TokenCode.RELOP);
             simple_expression();
         }
     }
 
-    private static void simple_expression() {
-        if (_lookahead == TokenCode.ADDOP) {
+    private void simple_expression() {
+        if (_opType == OpType.MINUS || _opType == OpType.PLUS) {
             sign();
         }
         term();
         simple_expression2();
     }
 
-    private static void simple_expression2() { // Epsilon x
+    private void simple_expression2() { // Epsilon x
         if (_lookahead == TokenCode.ADDOP) {
             match(TokenCode.ADDOP);
             term();
@@ -299,47 +332,42 @@ public class Parser {
         }
     }
 
-    private static void term() {
+    private void term() {
         factor();
         term2();
     }
 
-    private static void term2() { // Epsilon x
+    private void term2() { // Epsilon x
         if (_lookahead == TokenCode.MULOP) {
             match(TokenCode.MULOP);
-            factor();
-            term2();
+            term();
         }
     }
 
-    private static void factor() {
+    private void factor() {
         if (_lookahead == TokenCode.NOT) {
             match(TokenCode.NOT);
             factor();
         } else if (_lookahead == TokenCode.LPAREN) {
-            match(TokenCode.LPAREN);
-            expression();
-            match(TokenCode.RPAREN);
+            parenthesized_expression();
         } else if (_lookahead == TokenCode.NUMBER) {
             match(TokenCode.NUMBER);
         } else {
             match(TokenCode.IDENTIFIER);
             if (_lookahead == TokenCode.LPAREN) {
-                match(TokenCode.LPAREN);
-                expression_list();
-                match(TokenCode.RPAREN);
+                parenthesized_expression_list();
             } else {
                 variable_loc2();
             }
         }
     }
 
-    private static void variable_loc() {
+    private void variable_loc() {
         match(TokenCode.IDENTIFIER);
         variable_loc2();
     }
 
-    private static void variable_loc2() { // Epsilon x
+    private void variable_loc2() { // Epsilon x
         if (_lookahead == TokenCode.LBRACKET) {
             match(TokenCode.LBRACKET);
             expression();
@@ -347,15 +375,26 @@ public class Parser {
         }
     }
 
-    private static void sign() {
-        match(TokenCode.ADDOP);
+    private void sign() {
+        if (_opType == OpType.PLUS) {
+            match(OpType.PLUS);
+        } else {
+            match(OpType.MINUS);
+        }
     }
 
-    // lookahead check functions
-    private static boolean isExpression() {
-        return _lookahead == TokenCode.IF || _lookahead == TokenCode.ADDOP || 
-            _lookahead == TokenCode.NOT || _lookahead == TokenCode.LPAREN || 
-            _lookahead == TokenCode.NUMBER || _lookahead == TokenCode.IDENTIFIER; 
-        //return _expression.contains(_lookahead);
+    /*
+     * Lookahead checks
+     */
+    private boolean is_type() {
+        return _lookahead == TokenCode.INT || _lookahead == TokenCode.REAL;
+    }
+
+    private boolean is_expression() {
+        return _expression.contains(_lookahead);
+    }
+
+    private boolean is_statement_list() {
+        return _statementList.contains(_lookahead);
     }
 }
