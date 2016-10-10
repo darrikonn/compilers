@@ -1,6 +1,8 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import org.apache.commons.lang3.StringUtils;
 
 public class Parser {
     private Lexer _lexer;
@@ -9,10 +11,11 @@ public class Parser {
     private OpType _opType;
 
     private ArrayList<TokenCode> _expression, _statementList;
-    private String _decafCode;
-    private int _lineNumber;
+    private HashMap<Integer, ArrayList<ErrorObject>> _errorMap;
+    private String _filename;
 
-    public Parser(Lexer lexer) {
+    public Parser(Lexer lexer, String filename) {
+        _filename = filename;
         _lexer = lexer;
 
         // used for validation
@@ -25,18 +28,18 @@ public class Parser {
             TokenCode.CONTINUE
         ));
 
-        _decafCode = "";
-        _lineNumber = 0;
+        _errorMap = new HashMap<Integer, ArrayList<ErrorObject>>();
     }
 
     public static void main(String[] args) throws IOException {
-        Parser p = new Parser(new Lexer(new FileReader(args[0])));
+        Parser p = new Parser(new Lexer(new FileReader(args[0])), args[0]);
         p.parse();
     }
 
     public void parse() {
         readNextToken();
         program();
+        getErrors();
     }
 
     private void match(TokenCode code) { // nota yypushback
@@ -45,7 +48,7 @@ public class Parser {
             return;
         }
 
-        printError(code, _lookahead);
+        setError(code, _lookahead);
     }
 
     private void match(OpType type) {
@@ -54,15 +57,48 @@ public class Parser {
             return;
         }
 
-        printError(type, _opType);
+        setError(type, _opType);
     }
 
-    private void printError(Object expected, Object value) {
-        System.out.println(_token.getLineNumber() + " : " + _token.getColumnNumber() + " " + 
-                _lexer + "Error: expected \'" + expected + "\', got \'" + value + "\'");
-        System.out.println(_lexer.yytext());
-        System.out.println(_lexer.yylength());
-        System.exit(-1);
+    private void setError(Object expected, Object value) {
+        int line = _token.getLineNumber();
+        if (!_errorMap.containsKey(line)) {
+            _errorMap.put(line, new ArrayList<ErrorObject>());
+        }
+        String message = value == TokenCode.IDENTIFIER ? "Expected a type." : "Illegal character";
+        _errorMap.get(line).add(new ErrorObject(_token.getColumnNumber(), message));
+
+        // error recovery
+    }
+
+    private void getErrors() {
+        int mapSize;
+        if ((mapSize = _errorMap.size()) == 0) {
+            System.out.println("No errors");
+        } else {
+            try {
+                BufferedReader br = new BufferedReader(new FileReader(_filename));
+                String s = br.readLine();
+                for (int i = 0; s != null; i++, s = br.readLine()) {
+                    if (_errorMap.containsKey(i)) {
+                        String code = s.trim();
+                        String leadString = StringUtils.leftPad(Integer.toString(i+1), 
+                                3, ' ') + " : " + code;
+                        ArrayList<ErrorObject> obj = _errorMap.get(i);
+                        for (ErrorObject err : obj) {
+                            System.out.println(leadString);
+                            System.out.println(StringUtils.repeat(" ", 
+                                        err.Column+6-s.indexOf(code)) + "^ " + err.Message);
+                        }
+                    }
+                }
+                System.out.println("Number of errors: " + mapSize);
+                br.close();
+            } catch (Exception e) {
+                e.printStackTrace(System.out);
+                System.exit(-1);
+            }
+        }
     }
 
     private void readNextToken() {
@@ -71,20 +107,6 @@ public class Parser {
 
             _lookahead = _token.getTokenCode();
             _opType = _token.getOpType();
-
-
-            int currentLine = _token.getLineNumber();
-            if (currentLine > _lineNumber) {
-                _lineNumber = currentLine;
-                _decafCode = "";
-            } else {
-                
-            }
-
-
-            if (_lookahead == TokenCode.EOF) {
-                System.out.println("No errors");
-            }
         } catch (Exception e) {
             e.printStackTrace(System.out);
             System.exit(-1);

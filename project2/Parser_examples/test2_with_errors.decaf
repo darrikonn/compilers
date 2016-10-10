@@ -1,14 +1,15 @@
 class Program {
-    int i,j;
-    none_such_type o;
+  int i,j;
+  none_such_type o;
 
-    static int myFunc(int n) {
-        n = n * 2
-        return n;
-    }
+  static int myFunc(int n) {
 
-    static void main() {
-        i = myFunc(3);
-        $i++;
-    }
+    n = n * 2
+      return n;
+  }
+
+  static void main() {
+    i = myFunc(3);
+    $i++;
+  }
 }

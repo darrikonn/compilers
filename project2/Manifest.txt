@@ -1,1 +1,2 @@
 Main-Class: Parser
+Class-Path: Libraries/commons-lang3-3.4.jar
