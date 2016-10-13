@@ -57,7 +57,7 @@ public class Parser {
             return;
         }
 
-        setError(code.toString());
+        setError("Expected '" + code + "'");
     }
 
     private void match(OpType type) {
