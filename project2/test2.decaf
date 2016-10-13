@@ -9,7 +9,7 @@ class Program {
 */
     static void main(int i) {
         none_such_type o;
-        // n = n * 2
+        n = n * 2
 /*        $i++;
         for(i = ; i < 10 i++) {
             }
@@ -19,7 +19,7 @@ class Program {
         return t[9;
 //                    ^ Expected ']'
 */
-        //y = 2.0 (3.14);
+        y = 2.0 (3.14);
 //              ^ Expected ';'
 /*        x+;
 //           ^ Invalid statement
@@ -30,10 +30,8 @@ class Program {
         }}
 //                  ^ Invalid expression
 */
-        //break
+        break
 //              ^ Expected ';'
-        //y = test(3.3);
-//            ^ Expected '{'
 //        x = $ + 2;
 //              ^ Illegal character
     }

@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class Parser {
     private Lexer _lexer;
-    private Token _token;
+    private Token _token, _tmp;
     private TokenCode _lookahead;
     private OpType _opType;
 
@@ -67,7 +67,7 @@ public class Parser {
             return;
         }
 
-        setError("Expected '" + code + "'");
+        setError(code == TokenCode.SEMICOLON ? _tmp : _token, "Expected '" + code + "'");
     }
 
     private void match(OpType type) {
@@ -76,11 +76,11 @@ public class Parser {
             return;
         }
 
-        setError("err");
+        setError(_token, "err");
     }
 
-    private void recover_error(ArrayList<TokenCode> followList, String message) {
-        setError(message);
+    private void recover_error(Token token, ArrayList<TokenCode> followList, String message) {
+        setError(token, message);
         System.out.println("I'm Mr Mezeeks, look at me");
         while (!followList.contains(_lookahead)) {
             System.out.println("does not contain: " + _lookahead);
@@ -90,12 +90,12 @@ public class Parser {
         System.out.println("Current token: " + _lookahead);
     }
 
-    private void setError(String message) {
-        int line = _token.getLineNumber();
+    private void setError(Token token, String message) {
+        int line = token.getLineNumber();
         if (!_errorMap.containsKey(line)) {
             _errorMap.put(line, new ArrayList<ErrorObject>());
         }
-        _errorMap.get(line).add(new ErrorObject(_token.getColumnNumber(), message));
+        _errorMap.get(line).add(new ErrorObject(token.getColumnNumber(), message));
     }
 
     private void getErrors() {
@@ -114,9 +114,13 @@ public class Parser {
                         ArrayList<ErrorObject> obj = _errorMap.get(i);
                         for (ErrorObject err : obj) {
                             cnt++;
+                            int len = err.Message.contains("';'") 
+                                ? code.substring(code.lastIndexOf(" ")+1).length()
+                                : 0;
                             System.out.println(leadString);
                             System.out.println(StringUtils.repeat(" ", 
-                                        err.Column+6-s.indexOf(code)) + "^ " + err.Message);
+                                    err.Column+6-s.indexOf(code)) + 
+                                    StringUtils.repeat(" ", len) + "^ " + err.Message);
                         }
                     }
                 }
@@ -131,6 +135,7 @@ public class Parser {
 
     private void readNextToken() {
         try {
+            _tmp = _token;
             _token = _lexer.yylex();
 
             _lookahead = _token.getTokenCode();
@@ -138,7 +143,7 @@ public class Parser {
             _opType = _token.getOpType();
 
             if (_lookahead == TokenCode.ERR_ILL_CHAR) {
-                setError("Illegal character");
+                setError(_token, "Illegal character");
                 readNextToken();
             }
         } catch (Exception e) {
@@ -166,7 +171,7 @@ public class Parser {
             match(TokenCode.SEMICOLON);
             variable_declarations();
         } else if (!_follow_variable_declaration.contains(_lookahead)) {
-            recover_error(_follow_variable_declaration, "Expected a type");
+            recover_error(_token, _follow_variable_declaration, "Expected a type");
         }
     }
 
@@ -176,7 +181,7 @@ public class Parser {
         } else if (_lookahead == TokenCode.REAL) {
             match(TokenCode.REAL);
         } else {
-            setError("Invalid type");
+            setError(_token, "Invalid type");
         }
     }
 
@@ -225,7 +230,6 @@ public class Parser {
         match(TokenCode.RPAREN);
         match(TokenCode.LBRACE);
         variable_declarations();
-        System.out.println("yuuuuup");
         statement_list();
         match(TokenCode.RBRACE);
     }
@@ -249,7 +253,7 @@ public class Parser {
             type();
             match(TokenCode.IDENTIFIER);
         } else {
-            recover_error(_follow_parameter_list, "Expected a type");
+            recover_error(_token, _follow_parameter_list, "Expected a type");
         }
         parameter_list2();
     }
@@ -259,7 +263,7 @@ public class Parser {
             match(TokenCode.COMMA);
             parameter_list();
         } else if (!_follow_parameters.contains(_lookahead)) {
-            recover_error(_follow_parameters, "Expected ','");
+            recover_error(_token, _follow_parameters, "Expected ','");
         }
     }
 
@@ -296,7 +300,6 @@ public class Parser {
                 break;
             default:
                 statement2();
-                System.out.println("here1!");
                 match(TokenCode.SEMICOLON);
                 break;
         }
@@ -306,7 +309,9 @@ public class Parser {
         switch (_lookahead) {
             case IDENTIFIER:
                 match(TokenCode.IDENTIFIER);
-                if (_lookahead == TokenCode.LPAREN) {
+                if (_lookahead == TokenCode.IDENTIFIER) {
+                    recover_error(_tmp, _follow_statement2, "None such type");
+                } else if (_lookahead == TokenCode.LPAREN) {
                     parenthesized_expression_list();
                 } else {
                     variable_loc2();
@@ -316,7 +321,7 @@ public class Parser {
                     } else if (_lookahead == TokenCode.INCDECOP) {
                         match(TokenCode.INCDECOP);
                     } else {
-                        recover_error(_follow_statement2, "Invalid statement");
+                        recover_error(_token, _follow_statement2, "Invalid statement");
                     }
                 }
                 break;
@@ -331,7 +336,7 @@ public class Parser {
                 match(TokenCode.CONTINUE);
                 break;
             default:
-                recover_error(_follow_statement2, "Invalid statement");
+                recover_error(_token, _follow_statement2, "Invalid statement");
         }
     }
 
@@ -449,7 +454,7 @@ public class Parser {
                 }
                 break;
             default:
-                recover_error(_follow_expression, "Expected an expression");
+                recover_error(_token, _follow_expression, "Expected an expression");
                 break;
         }
     }
