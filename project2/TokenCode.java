@@ -8,6 +8,8 @@ public enum TokenCode {
     @Override
     public String toString() {
         switch(this) {
+            case IDENTIFIER: return "identifier";
+            case NUMBER: return "number";
             case CLASS: return "class";
             case STATIC: return "static";
             case VOID: return "void";

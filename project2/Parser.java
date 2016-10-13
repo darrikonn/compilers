@@ -16,7 +16,7 @@ public class Parser {
 
     // follows
     private ArrayList<TokenCode> _follow_parameters, _follow_variable_declaration, _follow_expression,
-            _follow_statement;
+            _follow_statement, _follow_parameter_list, _follow_statement2;
 
     public Parser(Lexer lexer, String filename) {
         _filename = filename;
@@ -33,12 +33,15 @@ public class Parser {
         ));
 
         _follow_parameters = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN));
+        _follow_parameter_list = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN,
+                    TokenCode.COMMA));
         _follow_expression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN, TokenCode.RBRACKET,
                     TokenCode.SEMICOLON, TokenCode.COMMA));
         _follow_statement = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
             TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
             TokenCode.CONTINUE, TokenCode.RBRACE, TokenCode.SEMICOLON
         ));
+        _follow_statement2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.SEMICOLON));
         _follow_variable_declaration = new ArrayList<TokenCode> (Arrays.asList(TokenCode.STATIC, 
                     TokenCode.IF, TokenCode.FOR, TokenCode.LBRACE, TokenCode.IDENTIFIER, 
                     TokenCode.RETURN, TokenCode.BREAK, TokenCode.CONTINUE, TokenCode.RBRACE
@@ -80,8 +83,11 @@ public class Parser {
         setError(message);
         System.out.println("I'm Mr Mezeeks, look at me");
         while (!followList.contains(_lookahead)) {
+            System.out.println("does not contain: " + _lookahead);
             readNextToken();
         }
+        
+        System.out.println("Current token: " + _lookahead);
     }
 
     private void setError(String message) {
@@ -170,7 +176,7 @@ public class Parser {
         } else if (_lookahead == TokenCode.REAL) {
             match(TokenCode.REAL);
         } else {
-            setError("Expected a type");
+            setError("Invalid type");
         }
     }
 
@@ -219,6 +225,7 @@ public class Parser {
         match(TokenCode.RPAREN);
         match(TokenCode.LBRACE);
         variable_declarations();
+        System.out.println("yuuuuup");
         statement_list();
         match(TokenCode.RBRACE);
     }
@@ -238,8 +245,12 @@ public class Parser {
     }
 
     private void parameter_list() {
-        type();
-        match(TokenCode.IDENTIFIER);
+        if (is_type()) {
+            type();
+            match(TokenCode.IDENTIFIER);
+        } else {
+            recover_error(_follow_parameter_list, "Expected a type");
+        }
         parameter_list2();
     }
 
@@ -248,7 +259,7 @@ public class Parser {
             match(TokenCode.COMMA);
             parameter_list();
         } else if (!_follow_parameters.contains(_lookahead)) {
-            recover_error(_follow_parameters, "Expected comma");
+            recover_error(_follow_parameters, "Expected ','");
         }
     }
 
@@ -305,7 +316,7 @@ public class Parser {
                     } else if (_lookahead == TokenCode.INCDECOP) {
                         match(TokenCode.INCDECOP);
                     } else {
-                        recover_error(_follow_statement, "Invalid statement");
+                        recover_error(_follow_statement2, "Invalid statement");
                     }
                 }
                 break;
@@ -320,7 +331,7 @@ public class Parser {
                 match(TokenCode.CONTINUE);
                 break;
             default:
-                recover_error(_follow_statement, "Invalid statement");
+                recover_error(_follow_statement2, "Invalid statement");
         }
     }
 
@@ -438,7 +449,7 @@ public class Parser {
                 }
                 break;
             default:
-                setError("Expected an expression");
+                recover_error(_follow_expression, "Expected an expression");
                 break;
         }
     }
