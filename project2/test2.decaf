@@ -1,24 +1,29 @@
 class Program {
+    static void skitur(int i, j) {}
+    static void skitur2(i, j) {}
+    static void skitur3(blabla i) {}
     static void main(int i int j) {
         // none_such_type o;
-        //n = n * 2
-        // $i++;
-        for(i=1;i<10;i++ {
-            }
+        // n = n * 2
+        /*$i++;
+//        for(i = ; i < 10 i++) {
+//            }
+//        for(i=1;i<10;i++ {
+//            }
 //                           ^ Expected ')'
-        return t[9;
-//                    ^ Expected ']'
-        y = 2.0 (3.14);
+//        return t[9;
+//                    ^ Expected ']'*/
+        //y = 2.0 (3.14);
 //              ^ Expected ';'
-        x+;
+//        x+;
 //           ^ Invalid statement
-        if (x > ) {
+//        if (x > ) {
 //                  ^ Invalid expression
-        break
+        //break
 //              ^ Expected ';'
-        y = test(3.3);
+        //y = test(3.3);
 //            ^ Expected '{'
-        x = $ + 2;
+//        x = $ + 2;
 //              ^ Illegal character
     }
 }

@@ -15,7 +15,8 @@ public class Parser {
     private String _filename;
 
     // follows
-    private ArrayList<TokenCode> _follow_parameters, _follow_variable_declaration;
+    private ArrayList<TokenCode> _follow_parameters, _follow_variable_declaration, _follow_expression,
+            _follow_statement;
 
     public Parser(Lexer lexer, String filename) {
         _filename = filename;
@@ -32,9 +33,15 @@ public class Parser {
         ));
 
         _follow_parameters = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN));
-        _follow_variable_declaration = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
+        _follow_expression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN, TokenCode.RBRACKET,
+                    TokenCode.SEMICOLON, TokenCode.COMMA));
+        _follow_statement = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
             TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
-            TokenCode.CONTINUE, TokenCode.STATIC
+            TokenCode.CONTINUE, TokenCode.RBRACE, TokenCode.SEMICOLON
+        ));
+        _follow_variable_declaration = new ArrayList<TokenCode> (Arrays.asList(TokenCode.STATIC, 
+                    TokenCode.IF, TokenCode.FOR, TokenCode.LBRACE, TokenCode.IDENTIFIER, 
+                    TokenCode.RETURN, TokenCode.BREAK, TokenCode.CONTINUE, TokenCode.RBRACE
         ));
 
         _errorMap = new HashMap<Integer, ArrayList<ErrorObject>>();
@@ -51,7 +58,7 @@ public class Parser {
         getErrors();
     }
 
-    private void match(TokenCode code) { // nota yypushback
+    private void match(TokenCode code) {
         if (_lookahead == code) {
             readNextToken();
             return;
@@ -121,7 +128,7 @@ public class Parser {
             _token = _lexer.yylex();
 
             _lookahead = _token.getTokenCode();
-            System.out.println(_lookahead);
+            //System.out.println(_lookahead);
             _opType = _token.getOpType();
 
             if (_lookahead == TokenCode.ERR_ILL_CHAR) {
@@ -160,8 +167,10 @@ public class Parser {
     private void type() {
         if (_lookahead == TokenCode.INT) {
             match(TokenCode.INT);
-        } else {
+        } else if (_lookahead == TokenCode.REAL) {
             match(TokenCode.REAL);
+        } else {
+            setError("Expected a type");
         }
     }
 
@@ -223,7 +232,7 @@ public class Parser {
     }
 
     private void parameters() { // Epsilon x
-        if (is_type()) {
+        if (_lookahead != TokenCode.RPAREN) {
             parameter_list();
         }
     }
@@ -276,7 +285,7 @@ public class Parser {
                 break;
             default:
                 statement2();
-                System.out.println("here!");
+                System.out.println("here1!");
                 match(TokenCode.SEMICOLON);
                 break;
         }
@@ -293,8 +302,10 @@ public class Parser {
                     if (_lookahead == TokenCode.ASSIGNOP) {
                         match(TokenCode.ASSIGNOP);
                         expression();
-                    } else {
+                    } else if (_lookahead == TokenCode.INCDECOP) {
                         match(TokenCode.INCDECOP);
+                    } else {
+                        recover_error(_follow_statement, "Invalid statement");
                     }
                 }
                 break;
@@ -308,6 +319,8 @@ public class Parser {
             case CONTINUE:
                 match(TokenCode.CONTINUE);
                 break;
+            default:
+                recover_error(_follow_statement, "Invalid statement");
         }
     }
 
@@ -416,13 +429,16 @@ public class Parser {
             case NUMBER:
                 match(TokenCode.NUMBER);
                 break;
-            default:
+            case IDENTIFIER:
                 match(TokenCode.IDENTIFIER);
                 if (_lookahead == TokenCode.LPAREN) {
                     parenthesized_expression_list();
                 } else {
                     variable_loc2();
                 }
+                break;
+            default:
+                setError("Expected an expression");
                 break;
         }
     }
