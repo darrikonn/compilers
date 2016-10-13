@@ -49,6 +49,9 @@ public class Parser {
         }
 
         setError(code, _lookahead);
+        while (_lookahead != TokenCode.RPAREN) {
+            readNextToken();
+        }
     }
 
     private void match(OpType type) {
@@ -67,16 +70,14 @@ public class Parser {
         }
         String message = value == TokenCode.IDENTIFIER ? "Expected a type." : "Illegal character";
         _errorMap.get(line).add(new ErrorObject(_token.getColumnNumber(), message));
-
-        // error recovery
     }
 
     private void getErrors() {
-        int mapSize;
-        if ((mapSize = _errorMap.size()) == 0) {
+        if (_errorMap.size() == 0) {
             System.out.println("No errors");
         } else {
             try {
+                int cnt = 0;
                 BufferedReader br = new BufferedReader(new FileReader(_filename));
                 String s = br.readLine();
                 for (int i = 0; s != null; i++, s = br.readLine()) {
@@ -86,13 +87,14 @@ public class Parser {
                                 3, ' ') + " : " + code;
                         ArrayList<ErrorObject> obj = _errorMap.get(i);
                         for (ErrorObject err : obj) {
+                            cnt++;
                             System.out.println(leadString);
                             System.out.println(StringUtils.repeat(" ", 
                                         err.Column+6-s.indexOf(code)) + "^ " + err.Message);
                         }
                     }
                 }
-                System.out.println("Number of errors: " + mapSize);
+                System.out.println("Number of errors: " + cnt);
                 br.close();
             } catch (Exception e) {
                 e.printStackTrace(System.out);
@@ -226,52 +228,62 @@ public class Parser {
     }
 
     private void statement() {
-        if (_lookahead == TokenCode.IF) {
-            match(TokenCode.IF);
-            parenthesized_expression();
-            statement_block();
-            optional_else();
-        } else if (_lookahead == TokenCode.FOR) {
-            match(TokenCode.FOR);
-            match(TokenCode.LPAREN);
-            variable_loc();
-            match(TokenCode.ASSIGNOP);
-            expression();
-            match(TokenCode.SEMICOLON);
-            expression();
-            match(TokenCode.SEMICOLON);
-            incr_decr_var();
-            match(TokenCode.RPAREN);
-            statement_block();
-        } else if (_lookahead == TokenCode.LBRACE) {
-            statement_block();
-        } else {
-            statement2();
-            match(TokenCode.SEMICOLON);
+        switch (_lookahead) {
+            case IF:
+                match(TokenCode.IF);
+                parenthesized_expression();
+                statement_block();
+                optional_else();
+                break;
+            case FOR:
+                match(TokenCode.FOR);
+                match(TokenCode.LPAREN);
+                variable_loc();
+                match(TokenCode.ASSIGNOP);
+                expression();
+                match(TokenCode.SEMICOLON);
+                expression();
+                match(TokenCode.SEMICOLON);
+                incr_decr_var();
+                match(TokenCode.RPAREN);
+                statement_block();
+                break;
+            case LBRACE:
+                statement_block();
+                break;
+            default:
+                statement2();
+                match(TokenCode.SEMICOLON);
+                break;
         }
     }
 
     private void statement2() {
-        if (_lookahead == TokenCode.IDENTIFIER) {
-            match(TokenCode.IDENTIFIER);
-            if (_lookahead == TokenCode.LPAREN) {
-                parenthesized_expression_list();
-            } else {
-                variable_loc2();
-                if (_lookahead == TokenCode.ASSIGNOP) {
-                    match(TokenCode.ASSIGNOP);
-                    expression();
+        switch (_lookahead) {
+            case IDENTIFIER:
+                match(TokenCode.IDENTIFIER);
+                if (_lookahead == TokenCode.LPAREN) {
+                    parenthesized_expression_list();
                 } else {
-                    match(TokenCode.INCDECOP);
+                    variable_loc2();
+                    if (_lookahead == TokenCode.ASSIGNOP) {
+                        match(TokenCode.ASSIGNOP);
+                        expression();
+                    } else {
+                        match(TokenCode.INCDECOP);
+                    }
                 }
-            }
-        } else if (_lookahead == TokenCode.RETURN) {
-            match(TokenCode.RETURN);
-            optional_expression();
-        } else if (_lookahead == TokenCode.BREAK) {
-            match(TokenCode.BREAK);
-        } else if (_lookahead == TokenCode.CONTINUE) {
-            match(TokenCode.CONTINUE);
+                break;
+            case RETURN:
+                match(TokenCode.RETURN);
+                optional_expression();
+                break;
+            case BREAK:
+                match(TokenCode.BREAK);
+                break;
+            case CONTINUE:
+                match(TokenCode.CONTINUE);
+                break;
         }
     }
 
@@ -339,8 +351,10 @@ public class Parser {
     }
 
     private void simple_expression() {
-        if (_opType == OpType.MINUS || _opType == OpType.PLUS) {
-            sign();
+        if (_opType == OpType.PLUS) {
+            match(OpType.PLUS);
+        } else if (_opType == OpType.MINUS) {
+            match(OpType.MINUS);
         }
         term();
         simple_expression2();
@@ -367,20 +381,25 @@ public class Parser {
     }
 
     private void factor() {
-        if (_lookahead == TokenCode.NOT) {
-            match(TokenCode.NOT);
-            factor();
-        } else if (_lookahead == TokenCode.LPAREN) {
-            parenthesized_expression();
-        } else if (_lookahead == TokenCode.NUMBER) {
-            match(TokenCode.NUMBER);
-        } else {
-            match(TokenCode.IDENTIFIER);
-            if (_lookahead == TokenCode.LPAREN) {
-                parenthesized_expression_list();
-            } else {
-                variable_loc2();
-            }
+        switch (_lookahead) {
+            case NOT:
+                match(TokenCode.NOT);
+                factor();
+                break;
+            case LPAREN:
+                parenthesized_expression();
+                break;
+            case NUMBER:
+                match(TokenCode.NUMBER);
+                break;
+            default:
+                match(TokenCode.IDENTIFIER);
+                if (_lookahead == TokenCode.LPAREN) {
+                    parenthesized_expression_list();
+                } else {
+                    variable_loc2();
+                }
+                break;
         }
     }
 
@@ -394,14 +413,6 @@ public class Parser {
             match(TokenCode.LBRACKET);
             expression();
             match(TokenCode.RBRACKET);
-        }
-    }
-
-    private void sign() {
-        if (_opType == OpType.PLUS) {
-            match(OpType.PLUS);
-        } else {
-            match(OpType.MINUS);
         }
     }
 

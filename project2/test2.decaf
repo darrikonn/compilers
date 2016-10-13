@@ -1,5 +1,4 @@
 class Program {
-    int x;
-    static void main() {
+    static void main(int i int j) {
     }
 }
