@@ -14,6 +14,9 @@ public class Parser {
     private HashMap<Integer, ArrayList<ErrorObject>> _errorMap;
     private String _filename;
 
+    // follows
+    private ArrayList<TokenCode> _follow_parameters, _follow_variable_declaration;
+
     public Parser(Lexer lexer, String filename) {
         _filename = filename;
         _lexer = lexer;
@@ -26,6 +29,12 @@ public class Parser {
         _statementList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
             TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
             TokenCode.CONTINUE
+        ));
+
+        _follow_parameters = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN));
+        _follow_variable_declaration = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
+            TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
+            TokenCode.CONTINUE, TokenCode.STATIC
         ));
 
         _errorMap = new HashMap<Integer, ArrayList<ErrorObject>>();
@@ -48,10 +57,7 @@ public class Parser {
             return;
         }
 
-        setError(code, _lookahead);
-        while (_lookahead != TokenCode.RPAREN) {
-            readNextToken();
-        }
+        setError(code.toString());
     }
 
     private void match(OpType type) {
@@ -60,15 +66,22 @@ public class Parser {
             return;
         }
 
-        setError(type, _opType);
+        setError("err");
     }
 
-    private void setError(Object expected, Object value) {
+    private void recover_error(ArrayList<TokenCode> followList, String message) {
+        setError(message);
+        System.out.println("I'm Mr Mezeeks, look at me");
+        while (!followList.contains(_lookahead)) {
+            readNextToken();
+        }
+    }
+
+    private void setError(String message) {
         int line = _token.getLineNumber();
         if (!_errorMap.containsKey(line)) {
             _errorMap.put(line, new ArrayList<ErrorObject>());
         }
-        String message = value == TokenCode.IDENTIFIER ? "Expected a type." : "Illegal character";
         _errorMap.get(line).add(new ErrorObject(_token.getColumnNumber(), message));
     }
 
@@ -108,7 +121,13 @@ public class Parser {
             _token = _lexer.yylex();
 
             _lookahead = _token.getTokenCode();
+            System.out.println(_lookahead);
             _opType = _token.getOpType();
+
+            if (_lookahead == TokenCode.ERR_ILL_CHAR) {
+                setError("Illegal character");
+                readNextToken();
+            }
         } catch (Exception e) {
             e.printStackTrace(System.out);
             System.exit(-1);
@@ -133,6 +152,8 @@ public class Parser {
             variable_list();
             match(TokenCode.SEMICOLON);
             variable_declarations();
+        } else if (!_follow_variable_declaration.contains(_lookahead)) {
+            recover_error(_follow_variable_declaration, "Expected a type");
         }
     }
 
@@ -217,6 +238,8 @@ public class Parser {
         if (_lookahead == TokenCode.COMMA) {
             match(TokenCode.COMMA);
             parameter_list();
+        } else if (!_follow_parameters.contains(_lookahead)) {
+            recover_error(_follow_parameters, "Expected comma");
         }
     }
 
@@ -253,6 +276,7 @@ public class Parser {
                 break;
             default:
                 statement2();
+                System.out.println("here!");
                 match(TokenCode.SEMICOLON);
                 break;
         }

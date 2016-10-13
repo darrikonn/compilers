@@ -1,4 +1,7 @@
 class Program {
     static void main(int i int j) {
+        // none_such_type o;
+        //n = n * 2
+        $i++;
     }
 }
