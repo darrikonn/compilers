@@ -18,10 +18,14 @@ public class Parser2 {
     // follows
     private ArrayList<TokenCode> _followParameters, _followVariableDeclaration, _followExpression,
             _followStatement, _followParameterList, _followStatement2, _followProgram, _followVariable,
-                _followMethodReturnType, _followMethodDeclarations, _followVariableList;
+                _followMethodReturnType, _followMethodDeclarations, _followVariableList,
+                _followStatementBlock, _followIncrDecrVar, _followParenthesizedExpressionList,
+                _followParenthesizedExpression, _followVariableLoc2;
 
     // first
-    private ArrayList<TokenCode> _firstVariableMethodDeclarations, _firstVariable2, _firstVariableDeclarationsStatementList, _firstVariableLoc, _firstParameters;
+    private ArrayList<OpType> _firstOpExpression;
+    private ArrayList<TokenCode> _firstVariableMethodDeclarations, _firstVariable2, _firstVariableDeclarationsStatementList, _firstVariableLoc, _firstParameters, _firstParameterList2, _firstExpression,
+            _firstIncrDecrVar, _firstStatementBlock, _firstVariableLoc2;
 
     public Parser2(Lexer lexer, String filename) throws IOException {
         _filename = filename;
@@ -43,6 +47,15 @@ public class Parser2 {
         ));
 
         // first
+        _firstOpExpression = new ArrayList<OpType> (Arrays.asList(OpType.MINUS, OpType.PLUS));
+        _firstExpression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.NOT, TokenCode.LPAREN,
+                    TokenCode.NUMBER, TokenCode.IDENTIFIER));
+        _firstIncrDecrVar = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IDENTIFIER));
+        _firstVariableLoc2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.LBRACKET,
+                    TokenCode.ASSIGNOP, TokenCode.INCDECOP));
+        _firstStatementBlock = new ArrayList<TokenCode> (Arrays.asList(TokenCode.LBRACE));
+        _firstParameterList2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN, 
+                    TokenCode.COMMA));
         _firstVariableMethodDeclarations = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IDENTIFIER));
         _firstParameters = new ArrayList<TokenCode> (Arrays.asList(TokenCode.INT, TokenCode.REAL,
                     TokenCode.RPAREN));
@@ -55,7 +68,20 @@ public class Parser2 {
                     TokenCode.CONTINUE, TokenCode.RBRACE));
 
         // follow
+        _followVariableLoc2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.MULOP,
+                    TokenCode.ADDOP, TokenCode.RELOP, TokenCode.RPAREN, TokenCode.SEMICOLON, 
+                    TokenCode.COMMA, TokenCode.RBRACKET, TokenCode.IDENTIFIER, TokenCode.NUMBER,
+                    TokenCode.LPAREN, TokenCode.NOT, TokenCode.ASSIGNOP, TokenCode.INCDECOP));
+        _followParenthesizedExpression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.MULOP,
+                    TokenCode.ADDOP, TokenCode.RELOP, TokenCode.RPAREN, TokenCode.SEMICOLON, 
+                    TokenCode.COMMA, TokenCode.RBRACKET, TokenCode.IDENTIFIER, TokenCode.NUMBER,
+                    TokenCode.LPAREN, TokenCode.NOT, TokenCode.LBRACE));
+        _followParenthesizedExpressionList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.MULOP,
+                    TokenCode.ADDOP, TokenCode.RELOP, TokenCode.RPAREN, TokenCode.SEMICOLON, 
+                    TokenCode.COMMA, TokenCode.RBRACKET, TokenCode.IDENTIFIER, TokenCode.NUMBER,
+                    TokenCode.LPAREN, TokenCode.NOT));
         _followVariableList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.SEMICOLON));
+        _followIncrDecrVar = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN));
         _followMethodDeclarations = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RBRACE,
                     TokenCode.STATIC));
         _followMethodReturnType = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IDENTIFIER));
@@ -67,10 +93,12 @@ public class Parser2 {
                     TokenCode.COMMA));
         _followExpression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN, TokenCode.RBRACKET,
                     TokenCode.SEMICOLON, TokenCode.COMMA));
+        _followStatementBlock = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
+            TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
+            TokenCode.CONTINUE, TokenCode.RBRACE, TokenCode.ELSE));
         _followStatement = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
             TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
-            TokenCode.CONTINUE, TokenCode.RBRACE, TokenCode.SEMICOLON
-        ));
+            TokenCode.CONTINUE, TokenCode.RBRACE));
         _followStatement2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.SEMICOLON));
         _followVariableDeclaration = new ArrayList<TokenCode> (Arrays.asList(TokenCode.STATIC, 
                     TokenCode.IF, TokenCode.FOR, TokenCode.LBRACE, TokenCode.IDENTIFIER, 
@@ -115,10 +143,17 @@ public class Parser2 {
     }
 
     private void recoverError(ArrayList<TokenCode> followList) {
-        System.out.println("I'm Mr Mezeeks, look at me");
         while (!followList.contains(_lookahead) && _lookahead != TokenCode.EOF) {
             readNextToken();
         }
+    }
+
+    private void recoverExpression() {
+        while (!_firstExpression.contains(_lookahead) && !_firstOpExpression.contains(_opType) && 
+                _lookahead != TokenCode.EOF) {
+            readNextToken();
+        }
+
     }
 
     private void setError(Token token, String message) {
@@ -184,9 +219,6 @@ public class Parser2 {
     /*
      * Grammar
      */
-    /*
-     * paela i thvi ad error recovera strax eftir semicolon en ekki fyrir hitt
-     */
     private void program() {
         if (!match(TokenCode.CLASS) || !match(TokenCode.IDENTIFIER) || !match(TokenCode.LBRACE)) {
             recoverError(_firstVariableMethodDeclarations);
@@ -201,7 +233,9 @@ public class Parser2 {
         if (isType()) {
             type();
             variableList();
-            match(TokenCode.SEMICOLON);
+            if (!match(TokenCode.SEMICOLON)) {
+                recoverError(_firstVariableDeclarationsStatementList);
+            }
             variableDeclarations();
         } else if (!_followVariableDeclaration.contains(_lookahead)) {
             setError(_token, "^ Expected a type");
@@ -209,7 +243,7 @@ public class Parser2 {
         }
     }
 
-    private void type() {
+    private void type() { // don't need error recovery because isType is always called
         if (_lookahead == TokenCode.INT) {
             match(TokenCode.INT);
         } else if (_lookahead == TokenCode.REAL) {
@@ -268,7 +302,7 @@ public class Parser2 {
     }
 
     private void methodDeclaration() {
-        match(TokenCode.STATIC);
+        match(TokenCode.STATIC); // always checked if static, no need for recovery
         methodReturnType();
         if (!match(TokenCode.IDENTIFIER) || !match(TokenCode.LPAREN)) {
             recoverError(_firstParameters);
@@ -279,7 +313,9 @@ public class Parser2 {
         }
         variableDeclarations();
         statementList();
-        match(TokenCode.RBRACE);
+        if (!match(TokenCode.RBRACE)) {
+            recoverError(_followMethodDeclarations);
+        }
     }
 
     private void methodReturnType() {
@@ -302,7 +338,9 @@ public class Parser2 {
     private void parameterList() {
         if (isType()) {
             type();
-            match(TokenCode.IDENTIFIER);
+            if (!match(TokenCode.IDENTIFIER)) {
+                recoverError(_firstParameterList2);
+            }
         } else {
             setError(_token, "^ Expected a type");
             recoverError(_followParameterList);
@@ -340,13 +378,21 @@ public class Parser2 {
                     recoverError(_firstVariableLoc);
                 }
                 variableLoc();
-                match(TokenCode.ASSIGNOP);
+                if (!match(TokenCode.ASSIGNOP)) {
+                    recoverExpression();
+                }
                 expression();
-                match(TokenCode.SEMICOLON);
+                if (!match(TokenCode.SEMICOLON)) {
+                    recoverExpression();
+                }
                 expression();
-                match(TokenCode.SEMICOLON);
+                if (!match(TokenCode.SEMICOLON)) {
+                    recoverError(_firstIncrDecrVar);
+                }
                 incrDecrVar();
-                match(TokenCode.RPAREN);
+                if (!match(TokenCode.RPAREN)) {
+                    recoverError(_firstStatementBlock);
+                }
                 statementBlock();
                 break;
             case LBRACE:
@@ -406,14 +452,20 @@ public class Parser2 {
     }
 
     private void statementBlock() {
-        match(TokenCode.LBRACE);
+        if (!match(TokenCode.LBRACE)) {
+            recoverError(_followStatement);
+        }
         statementList();
-        match(TokenCode.RBRACE);
+        if (!match(TokenCode.RBRACE)) {
+            recoverError(_followStatementBlock);
+        }
     }
 
     private void incrDecrVar() {
         variableLoc();
-        match(TokenCode.INCDECOP);
+        if (!match(TokenCode.INCDECOP)) {
+            recoverError(_followIncrDecrVar);
+        }
     }
 
     private void optionalElse() { // Epsilon x
@@ -431,11 +483,12 @@ public class Parser2 {
     }
 
     private void parenthesizedExpressionList() {
-        match(TokenCode.LPAREN);
+        match(TokenCode.LPAREN); // no need for error recovery or check
         expressionList();
-        match(TokenCode.RPAREN);
+        if (!match(TokenCode.RPAREN)) {
+            recoverError(_followParenthesizedExpressionList);
+        }
     }
-
 
     private void moreExpressions() { // Epsilon x
         if (_lookahead == TokenCode.COMMA) {
@@ -450,9 +503,13 @@ public class Parser2 {
     }
 
     private void parenthesizedExpression() {
-        match(TokenCode.LPAREN);
+        if (!match(TokenCode.LPAREN)) {
+            recoverExpression();
+        }
         expression();
-        match(TokenCode.RPAREN);
+        if (!match(TokenCode.RPAREN)) {
+            recoverError(_followParenthesizedExpression);
+        }
     }
 
     private void expression2() { // Epsilon x
@@ -520,7 +577,9 @@ public class Parser2 {
     }
 
     private void variableLoc() {
-        match(TokenCode.IDENTIFIER);
+        if (!match(TokenCode.IDENTIFIER)) {
+            recoverError(_firstVariableLoc2);
+        }
         variableLoc2();
     }
 
@@ -528,7 +587,9 @@ public class Parser2 {
         if (_lookahead == TokenCode.LBRACKET) {
             match(TokenCode.LBRACKET);
             expression();
-            match(TokenCode.RBRACKET);
+            if (!match(TokenCode.RBRACKET)) {
+                recoverError(_followVariableLoc2);
+            }
         }
     }
 
@@ -547,3 +608,4 @@ public class Parser2 {
         return _statementList.contains(_lookahead);
     }
 }
+// I'm Mr Mezeeks, look at me;

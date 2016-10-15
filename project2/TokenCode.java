@@ -10,6 +10,11 @@ public enum TokenCode {
         switch(this) {
             case IDENTIFIER: return "^ Expected an identifier";
             case NUMBER: return "^ Expected a number";
+            case INCDECOP: return "^ Expected an increment or a decrement operator";
+            case RELOP: return "^ Expected a relop";
+            case MULOP: return "^ Expected a mulop";
+            case ADDOP: return "^ Expected an addop";
+            case ASSIGNOP: return "^ Expected an assign operator";
             case CLASS: return "^ Expected 'class'";
             case STATIC: return "^ Expected 'static'";
             case VOID: return "^ Expected 'void'";

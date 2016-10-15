@@ -1,11 +1,11 @@
-class Program {
+/*class Program {
     static void main() {
         n = n * 2
         n = n * asdfasdfadsfasdfasdf
         n = n * a
         $i++
     }
-}
+}*/
 
 /*class Program {
     int x;
@@ -40,7 +40,7 @@ class Program {
 //                    ^ Expected ']'
 
         int tt[
-        y = 2.0 
+        y = 2.0
         y = 2.0 (3.14);
 //              ^ Expected ';'
         x+;
@@ -58,3 +58,15 @@ class Program {
 //              ^ Illegal character
     }
 }*/
+
+class Program {
+    static void main(int i) {
+        int i;
+        int tt[
+        for(i=1;i<10;++ {
+            }
+        y = 2.0
+        y = 2.0 (3.14);
+        break
+    }
+}
