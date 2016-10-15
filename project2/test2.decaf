@@ -1,27 +1,49 @@
 class Program {
-/*    static void skitur13(i ,) {}
+    static void main() {
+        n = n * 2
+        n = n * asdfasdfadsfasdfasdf
+        n = n * a
+        $i++
+    }
+}
+
+/*class Program {
+    int x;
+    int i j;
+    int i, j;
+    int i, int j;
+    int i
+    static void main() {
+        n = n * 2
+        $i++
+    }
+}*/
+
+/*class, ad  Program {
+    static void skitur13(i ,) {}
     static void skitur1337() {}
     static void skitur(int i, j) {}
     static void skitur1(j) {}
-    static void skitur2(i, j) {}
+    static void skitur2(i, j) {
     static void skitur3(blabla i) {}
     static void main(int i int j) {
-*/
     static void main(int i) {
         none_such_type o;
         n = n * 2
-/*        $i++;
+        $i++;
         for(i = ; i < 10 i++) {
             }
-        for(i=1;i<10;i++ {
+        for(i=1;i<10;++ {
             }
 //                           ^ Expected ')'
         return t[9;
 //                    ^ Expected ']'
-*/
+
+        int tt[
+        y = 2.0 
         y = 2.0 (3.14);
 //              ^ Expected ';'
-/*        x+;
+        x+;
 //           ^ Invalid statement
         if (x > 2 {
         if () {
@@ -29,10 +51,10 @@ class Program {
         }
         }}
 //                  ^ Invalid expression
-*/
+
         break
 //              ^ Expected ';'
-//        x = $ + 2;
+        x = $ + 2;
 //              ^ Illegal character
     }
-}
+}*/
