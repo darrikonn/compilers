@@ -7,20 +7,36 @@ import org.apache.commons.lang3.StringUtils;
 public class Parser {
     private Lexer _lexer;
     private Token _token, _tmp;
+    private String _prevText;
     private TokenCode _lookahead;
     private OpType _opType;
 
-    private ArrayList<TokenCode> _expression, _statementList;
+    private ArrayList<TokenCode> _expression, _statementList, _types;
     private HashMap<Integer, ArrayList<ErrorObject>> _errorMap;
     private String _filename;
 
-    // follows
-    private ArrayList<TokenCode> _follow_parameters, _follow_variable_declaration, _follow_expression,
-            _follow_statement, _follow_parameter_list, _follow_statement2, _follow_program;
+    // FOLLOWs
+    private ArrayList<TokenCode> _followParameters, _followVariableDeclaration, _followExpression,
+            _followStatement, _followParameterList, _followVariable,
+                _followMethodReturnType, _followMethodDeclarations, _followVariableList,
+                _followStatementBlock, _followParenthesizedExpressionList,
+                _followParenthesizedExpression, _followVariableLoc2, _followNoneSuchType;
 
-    public Parser(Lexer lexer, String filename) {
+    // FIRSTs
+    private ArrayList<OpType> _firstOpExpression;
+    private ArrayList<TokenCode> _firstVariableMethodDeclarations, _firstVariableDeclarationsStatementList, 
+            _firstVariableLoc, _firstParameters, _firstParameterList2, _firstExpression,
+            _firstStatementBlock, _firstVariableLoc2;
+
+    public Parser(Lexer lexer, String filename) throws IOException {
         _filename = filename;
         _lexer = lexer;
+        _token = lexer.yylex();
+        _tmp = _token;
+        _prevText = "";
+        _lookahead = _token.getTokenCode();
+        _opType = _token.getOpType();
+        _errorMap = new HashMap<Integer, ArrayList<ErrorObject>>();
 
         // used for validation
         _expression = new ArrayList<TokenCode> (Arrays.asList(
@@ -31,25 +47,76 @@ public class Parser {
             TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
             TokenCode.CONTINUE
         ));
+        _types = new ArrayList<TokenCode> (Arrays.asList(TokenCode.INT, TokenCode.REAL));
 
-        _follow_program = new ArrayList<TokenCode> (Arrays.asList(TokenCode.STATIC, TokenCode.INT, 
-                    TokenCode.REAL));
-        _follow_parameters = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN));
-        _follow_parameter_list = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN,
+        // FIRST
+        _firstExpression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.NOT, TokenCode.LPAREN,
+                    TokenCode.NUMBER, TokenCode.IDENTIFIER));
+
+        _firstVariableLoc2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.LBRACKET,
+                    TokenCode.ASSIGNOP, TokenCode.INCDECOP));
+
+        _firstParameterList2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN, 
                     TokenCode.COMMA));
-        _follow_expression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN, TokenCode.RBRACKET,
-                    TokenCode.SEMICOLON, TokenCode.COMMA));
-        _follow_statement = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
-            TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
-            TokenCode.CONTINUE, TokenCode.RBRACE, TokenCode.SEMICOLON
-        ));
-        _follow_statement2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.SEMICOLON));
-        _follow_variable_declaration = new ArrayList<TokenCode> (Arrays.asList(TokenCode.STATIC, 
-                    TokenCode.IF, TokenCode.FOR, TokenCode.LBRACE, TokenCode.IDENTIFIER, 
-                    TokenCode.RETURN, TokenCode.BREAK, TokenCode.CONTINUE, TokenCode.RBRACE
-        ));
 
-        _errorMap = new HashMap<Integer, ArrayList<ErrorObject>>();
+        _firstVariableDeclarationsStatementList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF,
+                    TokenCode.FOR, TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK,
+                    TokenCode.CONTINUE, TokenCode.RBRACE));
+
+        _firstStatementBlock = new ArrayList<TokenCode> (Arrays.asList(TokenCode.LBRACE));
+
+        _firstOpExpression = new ArrayList<OpType> (Arrays.asList(OpType.MINUS, OpType.PLUS));
+
+        _firstParameters = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN));
+        _firstParameters.addAll(_types);
+
+        _firstVariableMethodDeclarations = new ArrayList<TokenCode> (Arrays.asList(TokenCode.STATIC, 
+                    TokenCode.IDENTIFIER, TokenCode.RBRACE));
+        _firstVariableMethodDeclarations.addAll(_types);
+
+        // FOLLOW
+        _followMethodReturnType = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IDENTIFIER));
+
+        _followVariable = new ArrayList<TokenCode> (Arrays.asList(TokenCode.COMMA, TokenCode.SEMICOLON));
+
+        _followParameterList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN,
+                    TokenCode.COMMA));
+
+        _followExpression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN, TokenCode.RBRACKET,
+                    TokenCode.SEMICOLON, TokenCode.COMMA));
+
+        _followMethodDeclarations = new ArrayList<TokenCode>(Arrays.asList(TokenCode.RBRACE,
+                    TokenCode.STATIC));
+
+        _followNoneSuchType = new ArrayList<TokenCode>();
+        _followNoneSuchType.addAll(_types);
+        _followNoneSuchType.addAll(_followMethodDeclarations);
+
+        _followParenthesizedExpressionList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.MULOP,
+                    TokenCode.ADDOP, TokenCode.RELOP, TokenCode.RPAREN, TokenCode.SEMICOLON, 
+                    TokenCode.COMMA, TokenCode.RBRACKET, TokenCode.IDENTIFIER, TokenCode.NUMBER,
+                    TokenCode.LPAREN, TokenCode.NOT));
+        
+        _followVariableLoc2 = new ArrayList<TokenCode> (Arrays.asList(TokenCode.ASSIGNOP, 
+                    TokenCode.INCDECOP));
+        _followVariableLoc2.addAll(_followParenthesizedExpressionList);
+
+        _followParenthesizedExpression = new ArrayList<TokenCode> (Arrays.asList(TokenCode.LBRACE));
+        _followParenthesizedExpression.addAll(_followParenthesizedExpressionList);
+
+        _followParameters = new ArrayList<TokenCode> (Arrays.asList(TokenCode.RPAREN));
+
+        _followVariableList = new ArrayList<TokenCode> (Arrays.asList(TokenCode.SEMICOLON));
+
+        _followStatement = new ArrayList<TokenCode> (Arrays.asList(TokenCode.IF, TokenCode.FOR, 
+            TokenCode.LBRACE, TokenCode.IDENTIFIER, TokenCode.RETURN, TokenCode.BREAK, 
+            TokenCode.CONTINUE, TokenCode.RBRACE));
+
+        _followStatementBlock = new ArrayList<TokenCode>(Arrays.asList(TokenCode.ELSE));
+        _followStatementBlock.addAll(_followStatement);
+
+        _followVariableDeclaration = new ArrayList<TokenCode> (Arrays.asList(TokenCode.STATIC));
+        _followVariableDeclaration.addAll(_followStatement);
     }
 
     public static void main(String[] args) throws IOException {
@@ -58,7 +125,6 @@ public class Parser {
     }
 
     public void parse() {
-        readNextToken();
         program();
         getErrors();
     }
@@ -69,7 +135,11 @@ public class Parser {
             return true;
         }
 
-        //setError(code == TokenCode.SEMICOLON ? _tmp : _token, "Expected '" + code + "'");
+        String message = code == TokenCode.SEMICOLON 
+            ? StringUtils.repeat(" ", _prevText.length()) + code.toString()
+            : code.toString();
+        setError(code == TokenCode.SEMICOLON ? _tmp : _token, message);
+
         return false;
     }
 
@@ -79,19 +149,22 @@ public class Parser {
             return true;
         }
 
-        setError(_token, "Expected '" + type + "'");
+        setError(_token, "^ Expected '" + type + "'");
         return false;
     }
 
-    private void recover_error(Token token, ArrayList<TokenCode> followList, String message) {
-        setError(token, message);
-        System.out.println("I'm Mr Mezeeks, look at me");
-        while (!followList.contains(_lookahead)) {
-            System.out.println("does not contain: " + _lookahead);
+    private void recoverError(ArrayList<TokenCode> followList) {
+        while (!followList.contains(_lookahead) && _lookahead != TokenCode.EOF) {
             readNextToken();
         }
-        
-        System.out.println("Current token: " + _lookahead);
+    }
+
+    private void recoverExpression() {
+        while (!_firstExpression.contains(_lookahead) && !_firstOpExpression.contains(_opType) && 
+                _lookahead != TokenCode.EOF) {
+            readNextToken();
+        }
+
     }
 
     private void setError(Token token, String message) {
@@ -118,13 +191,9 @@ public class Parser {
                         ArrayList<ErrorObject> obj = _errorMap.get(i);
                         for (ErrorObject err : obj) {
                             cnt++;
-                            int len = err.Message.contains("';'") 
-                                ? code.substring(code.lastIndexOf(" ")+1).length()
-                                : 0;
                             System.out.println(leadString);
                             System.out.println(StringUtils.repeat(" ", 
-                                    err.Column+6-s.indexOf(code)) + 
-                                    StringUtils.repeat(" ", len) + "^ " + err.Message);
+                                    err.Column+6-s.indexOf(code)) + err.Message);
                         }
                     }
                 }
@@ -140,15 +209,17 @@ public class Parser {
     private void readNextToken() {
         try {
             _tmp = _token;
+            _prevText = _lexer.yytext();
             _token = _lexer.yylex();
 
             _lookahead = _token.getTokenCode();
-            //System.out.println(_lookahead);
             _opType = _token.getOpType();
 
             if (_lookahead == TokenCode.ERR_ILL_CHAR) {
-                setError(_token, "Illegal character");
-                readNextToken();
+                setError(_token, "^ Illegal character");
+                _token = _lexer.yylex();
+                _lookahead = _token.getTokenCode();
+                _opType = _token.getOpType();
             }
         } catch (Exception e) {
             e.printStackTrace(System.out);
@@ -159,128 +230,152 @@ public class Parser {
     /*
      * Grammar
      */
-    /*
-     * paela i thvi ad error recovera strax eftir semicolon en ekki fyrir hitt
-     */
     private void program() {
         if (!match(TokenCode.CLASS) || !match(TokenCode.IDENTIFIER) || !match(TokenCode.LBRACE)) {
-            if (!_follow_program.contains(_lookahead)) {
-                recover_error(_token, _follow_program, "Expected 'class Program {'");
-            }
+            recoverError(_firstVariableMethodDeclarations);
         }
 
-        variable_declarations();
-        method_declarations();
+        variableDeclarations(true);
+        methodDeclarations();
         match(TokenCode.RBRACE);
     }
 
-    private void variable_declarations() { // Epsilon x
-        if (is_type()) {
+    private void variableDeclarations(boolean outSideOfScope) { // Epsilon x
+        if (isType()) {
             type();
-            variable_list();
-            match(TokenCode.SEMICOLON);
-            variable_declarations();
-        } else if (!_follow_variable_declaration.contains(_lookahead)) {
-            recover_error(_token, _follow_variable_declaration, "Expected a type");
+            variableList();
+            if (!match(TokenCode.SEMICOLON)) {
+                recoverError(_firstVariableDeclarationsStatementList);
+            }
+            variableDeclarations(outSideOfScope);
+        } else if (outSideOfScope && _lookahead == TokenCode.IDENTIFIER) {
+            setError(_token, "^ None such type");
+            recoverError(_followNoneSuchType);
+            variableDeclarations(outSideOfScope);
+        } else if (!_followVariableDeclaration.contains(_lookahead)) {
+            setError(_token, "^ Expected a type");
+            recoverError(_followVariableDeclaration);
         }
     }
 
-    private void type() {
+    private void type() { // don't need error recovery because isType is always called
         if (_lookahead == TokenCode.INT) {
             match(TokenCode.INT);
         } else if (_lookahead == TokenCode.REAL) {
             match(TokenCode.REAL);
-        } else {
-            setError(_token, "Invalid type");
         }
     }
 
-    private void variable_list() {
+    private void variableList() {
         variable();
-        variable_list2();
+        variableList2();
     }
 
-    private void variable_list2() { // Epsilon x
+    private void variableList2() { // Epsilon x
         if (_lookahead == TokenCode.COMMA) {
             match(TokenCode.COMMA);
-            variable_list();
+            variableList();
+        } else if (!_followVariableList.contains(_lookahead)) {
+            setError(_token, "^ Expected a comma");
+            recoverError(_followVariableList);
         }
     }
 
     private void variable() {
-        match(TokenCode.IDENTIFIER);
-        variable2();
+        if (_lookahead == TokenCode.IDENTIFIER) {
+            match(TokenCode.IDENTIFIER);
+            variable2();
+        } else {
+            setError(_token, "^ Expected an identifier");
+            recoverError(_followVariable);
+        }
     }
 
     private void variable2() { // Epsilon x
         if (_lookahead == TokenCode.LBRACKET) {
-            match(TokenCode.LBRACKET);
-            match(TokenCode.NUMBER);
-            match(TokenCode.RBRACKET);
+            if (!match(TokenCode.LBRACKET) || !match(TokenCode.NUMBER) || !match(TokenCode.RBRACKET)) {
+                recoverError(_followVariable);
+            }
         }
     }
 
-    private void method_declarations() {
-        method_declaration();
-        more_method_declarations();
-    }
-
-    private void more_method_declarations() { // Epsilon x
+    private void methodDeclarations() {
         if (_lookahead == TokenCode.STATIC) {
-            method_declarations();
+            methodDeclaration();
+            moreMethodDeclarations();
+        } else {
+            setError(_token, "^ Expected 'static'");
+            recoverError(_followMethodDeclarations);
         }
     }
 
-    private void method_declaration() {
-        match(TokenCode.STATIC);
-        method_return_type();
-        match(TokenCode.IDENTIFIER);
-        match(TokenCode.LPAREN);
-        parameters();
-        match(TokenCode.RPAREN);
-        match(TokenCode.LBRACE);
-        variable_declarations();
-        statement_list();
-        match(TokenCode.RBRACE);
+    private void moreMethodDeclarations() { // Epsilon x
+        if (_lookahead == TokenCode.STATIC) {
+            methodDeclarations();
+        }
     }
 
-    private void method_return_type() {
-        if (is_type()) {
+    private void methodDeclaration() {
+        match(TokenCode.STATIC); // always checked if static, no need for recovery
+        methodReturnType();
+        if (!match(TokenCode.IDENTIFIER) || !match(TokenCode.LPAREN)) {
+            recoverError(_firstParameters);
+        }
+        parameters();
+        if (!match(TokenCode.RPAREN) || !match(TokenCode.LBRACE)) {
+            recoverError(_firstVariableDeclarationsStatementList);
+        }
+        variableDeclarations(false);
+        statementList();
+        if (!match(TokenCode.RBRACE)) {
+            recoverError(_followMethodDeclarations);
+        }
+    }
+
+    private void methodReturnType() {
+        if (isType()) {
             type();
-        } else {
+        } else if (_lookahead == TokenCode.VOID) {
             match(TokenCode.VOID);
+        } else {
+            setError(_token, "^ Expected a method return type");
+            recoverError(_followMethodReturnType);
         }
     }
 
     private void parameters() { // Epsilon x
         if (_lookahead != TokenCode.RPAREN) {
-            parameter_list();
+            parameterList();
         }
     }
 
-    private void parameter_list() {
-        if (is_type()) {
+    private void parameterList() {
+        if (isType()) {
             type();
-            match(TokenCode.IDENTIFIER);
+            if (!match(TokenCode.IDENTIFIER)) {
+                recoverError(_firstParameterList2);
+            }
         } else {
-            recover_error(_token, _follow_parameter_list, "Expected a type");
+            setError(_token, "^ Expected a type");
+            recoverError(_followParameterList);
         }
-        parameter_list2();
+        parameterList2();
     }
 
-    private void parameter_list2() { // Epsilon x
+    private void parameterList2() { // Epsilon x
         if (_lookahead == TokenCode.COMMA) {
             match(TokenCode.COMMA);
-            parameter_list();
-        } else if (!_follow_parameters.contains(_lookahead)) {
-            recover_error(_token, _follow_parameters, "Expected ','");
+            parameterList();
+        } else if (!_followParameters.contains(_lookahead)) {
+            setError(_token, "^ Expected a comma");
+            recoverError(_followParameters);
         }
     }
 
-    private void statement_list() { // Epsilon x
-        if (is_statement_list()) {
+    private void statementList() { // Epsilon x
+        if (isStatementList()) {
             statement();
-            statement_list();
+            statementList();
         }
     }
 
@@ -288,32 +383,39 @@ public class Parser {
         switch (_lookahead) {
             case IF:
                 match(TokenCode.IF);
-                parenthesized_expression();
-                statement_block();
-                optional_else();
+                parenthesizedExpression();
+                statementBlock();
+                optionalElse();
                 break;
             case FOR:
-                match(TokenCode.FOR);
-                match(TokenCode.LPAREN);
-                variable_loc();
-                match(TokenCode.ASSIGNOP);
+                if (!match(TokenCode.FOR) || !match(TokenCode.LPAREN)) {
+                    recoverError(_firstVariableLoc);
+                }
+                variableLoc();
+                if (!match(TokenCode.ASSIGNOP)) {
+                    recoverExpression();
+                }
                 expression();
-                match(TokenCode.SEMICOLON);
+                if (!match(TokenCode.SEMICOLON)) {
+                    recoverExpression();
+                }
                 expression();
-                match(TokenCode.SEMICOLON);
-                incr_decr_var();
-                match(TokenCode.RPAREN);
-                statement_block();
+                if (!match(TokenCode.SEMICOLON)) {
+                    recoverError(_followMethodReturnType);
+                }
+                incrDecrVar();
+                if (!match(TokenCode.RPAREN)) {
+                    recoverError(_firstStatementBlock);
+                }
+                statementBlock();
                 break;
             case LBRACE:
-                statement_block();
+                statementBlock();
                 break;
             default:
                 statement2();
                 if (!match(TokenCode.SEMICOLON)) {
-                    if (!_follow_statement.contains(_lookahead)) {
-                        recover_error(_token, _follow_statement, "gablagabla");
-                    }
+                    recoverError(_followStatement);
                 }
                 break;
         }
@@ -324,25 +426,26 @@ public class Parser {
             case IDENTIFIER:
                 match(TokenCode.IDENTIFIER);
                 if (_lookahead == TokenCode.IDENTIFIER) {
-                    recover_error(_tmp, _follow_statement2, "None such type");
+                    setError(_tmp, "^ None such type");
+                    recoverError(_followVariableList);
                 } else if (_lookahead == TokenCode.LPAREN) {
-                    parenthesized_expression_list();
+                    parenthesizedExpressionList();
                 } else {
-                    variable_loc2();
+                    variableLoc2();
                     if (_lookahead == TokenCode.ASSIGNOP) {
                         match(TokenCode.ASSIGNOP);
                         expression();
-                System.out.println("heeere");
                     } else if (_lookahead == TokenCode.INCDECOP) {
                         match(TokenCode.INCDECOP);
                     } else {
-                        recover_error(_token, _follow_statement2, "Invalid statement");
+                        setError(_token, "^ Invalid statement");
+                        recoverError(_followVariableList);
                     }
                 }
                 break;
             case RETURN:
                 match(TokenCode.RETURN);
-                optional_expression();
+                optionalExpression();
                 break;
             case BREAK:
                 match(TokenCode.BREAK);
@@ -351,88 +454,100 @@ public class Parser {
                 match(TokenCode.CONTINUE);
                 break;
             default:
-                recover_error(_token, _follow_statement2, "Invalid statement");
+                setError(_token, "^ Invalid statement");
+                recoverError(_followVariableList);
         }
     }
 
-    private void optional_expression() { // Epsilon x
-        if (is_expression()) {
+    private void optionalExpression() { // Epsilon x
+        if (isExpression()) {
             expression();
         }
     }
 
-    private void statement_block() {
-        match(TokenCode.LBRACE);
-        statement_list();
-        match(TokenCode.RBRACE);
+    private void statementBlock() {
+        if (!match(TokenCode.LBRACE)) {
+            recoverError(_followStatement);
+        }
+        statementList();
+        if (!match(TokenCode.RBRACE)) {
+            recoverError(_followStatementBlock);
+        }
     }
 
-    private void incr_decr_var() {
-        variable_loc();
-        match(TokenCode.INCDECOP);
+    private void incrDecrVar() {
+        variableLoc();
+        if (!match(TokenCode.INCDECOP)) {
+            recoverError(_followParameters);
+        }
     }
 
-    private void optional_else() { // Epsilon x
+    private void optionalElse() { // Epsilon x
         if (_lookahead == TokenCode.ELSE) {
             match(TokenCode.ELSE);
-            statement_block();
+            statementBlock();
         }
     }
 
-    private void expression_list() { // Epsilon x
-        if (is_expression()) {
+    private void expressionList() { // Epsilon x
+        if (isExpression()) {
             expression();
-            more_expressions();
+            moreExpressions();
         }
     }
 
-    private void parenthesized_expression_list() {
-        match(TokenCode.LPAREN);
-        expression_list();
-        match(TokenCode.RPAREN);
+    private void parenthesizedExpressionList() {
+        match(TokenCode.LPAREN); // no need for error recovery or check
+        expressionList();
+        if (!match(TokenCode.RPAREN)) {
+            recoverError(_followParenthesizedExpressionList);
+        }
     }
 
-
-    private void more_expressions() { // Epsilon x
+    private void moreExpressions() { // Epsilon x
         if (_lookahead == TokenCode.COMMA) {
             match(TokenCode.COMMA);
-            expression_list();
+            expressionList();
         }
     }
 
     private void expression() {
-        simple_expression();
+        simpleExpression();
         expression2();
     }
 
-    private void parenthesized_expression() {
-        match(TokenCode.LPAREN);
+    private void parenthesizedExpression() {
+        if (!match(TokenCode.LPAREN)) {
+            recoverExpression();
+        }
         expression();
-        match(TokenCode.RPAREN);
+        if (!match(TokenCode.RPAREN)) {
+            recoverError(_followParenthesizedExpression);
+        }
     }
 
     private void expression2() { // Epsilon x
         if (_lookahead == TokenCode.RELOP) {
             match(TokenCode.RELOP);
-            simple_expression();
+            simpleExpression();
         }
     }
 
-    private void simple_expression() {
+    private void simpleExpression() {
         if (_opType == OpType.PLUS) {
             match(OpType.PLUS);
         } else if (_opType == OpType.MINUS) {
             match(OpType.MINUS);
         }
         term();
-        simple_expression2();
+        simpleExpression2();
     }
 
-    private void simple_expression2() { // Epsilon x
+    private void simpleExpression2() { // Epsilon x
         if (_lookahead == TokenCode.ADDOP) {
             match(TokenCode.ADDOP);
             term();
-            simple_expression2();
+            simpleExpression2();
         }
     }
 
@@ -455,7 +570,7 @@ public class Parser {
                 factor();
                 break;
             case LPAREN:
-                parenthesized_expression();
+                parenthesizedExpression();
                 break;
             case NUMBER:
                 match(TokenCode.NUMBER);
@@ -463,42 +578,48 @@ public class Parser {
             case IDENTIFIER:
                 match(TokenCode.IDENTIFIER);
                 if (_lookahead == TokenCode.LPAREN) {
-                    parenthesized_expression_list();
+                    parenthesizedExpressionList();
                 } else {
-                    variable_loc2();
+                    variableLoc2();
                 }
                 break;
             default:
-                recover_error(_token, _follow_expression, "Expected an expression");
+                setError(_token, "^ Expected an expression");
+                recoverError(_followExpression);
                 break;
         }
     }
 
-    private void variable_loc() {
-        match(TokenCode.IDENTIFIER);
-        variable_loc2();
+    private void variableLoc() {
+        if (!match(TokenCode.IDENTIFIER)) {
+            recoverError(_firstVariableLoc2);
+        }
+        variableLoc2();
     }
 
-    private void variable_loc2() { // Epsilon x
+    private void variableLoc2() { // Epsilon x
         if (_lookahead == TokenCode.LBRACKET) {
             match(TokenCode.LBRACKET);
             expression();
-            match(TokenCode.RBRACKET);
+            if (!match(TokenCode.RBRACKET)) {
+                recoverError(_followVariableLoc2);
+            }
         }
     }
 
     /*
      * Lookahead checks
      */
-    private boolean is_type() {
-        return _lookahead == TokenCode.INT || _lookahead == TokenCode.REAL;
+    private boolean isType() {
+        return _types.contains(_lookahead);
     }
 
-    private boolean is_expression() {
+    private boolean isExpression() {
         return _expression.contains(_lookahead);
     }
 
-    private boolean is_statement_list() {
+    private boolean isStatementList() {
         return _statementList.contains(_lookahead);
     }
 }
+// I'm Mr Mezeeks, look at me;
