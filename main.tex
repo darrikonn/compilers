@@ -1,0 +1,245 @@
+\documentclass{article}
+
+\usepackage{fancyhdr}
+\usepackage{extramarks}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{tikz}
+\usepackage[plain]{algorithm}
+\usepackage{algpseudocode}
+
+\usetikzlibrary{automata,positioning}
+
+%
+% Basic Document Settings
+%
+
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\linespread{1.1}
+
+\pagestyle{fancy}
+\lhead{\hmwkAuthorName}
+\chead{\hmwkClass}
+\rhead{\hmwkTitle}
+\lfoot{\lastxmark}
+\cfoot{\thepage}
+
+\renewcommand\headrulewidth{0.4pt}
+\renewcommand\footrulewidth{0.4pt}
+
+\setlength\parindent{0pt}
+
+%
+% Create Problem Sections
+%
+
+\newcommand{\enterProblemHeader}[1]{
+    \nobreak\extramarks{}{Problem \arabic{#1} continued on next page\ldots}\nobreak{}
+    \nobreak\extramarks{Problem \arabic{#1} (continued)}{Problem \arabic{#1} continued on next page\ldots}\nobreak{}
+}
+
+\newcommand{\exitProblemHeader}[1]{
+    \nobreak\extramarks{Problem \arabic{#1} (continued)}{Problem \arabic{#1} continued on next page\ldots}\nobreak{}
+    \stepcounter{#1}
+    \nobreak\extramarks{Problem \arabic{#1}}{}\nobreak{}
+}
+
+\setcounter{secnumdepth}{0}
+\newcounter{partCounter}
+\newcounter{homeworkProblemCounter}
+\setcounter{homeworkProblemCounter}{1}
+\nobreak\extramarks{Problem \arabic{homeworkProblemCounter}}{}\nobreak{}
+
+%
+% Homework Problem Environment
+%
+% This environment takes an optional argument. When given, it will adjust the
+% problem counter. This is useful for when the problems given for your
+% assignment aren't sequential. See the last 3 problems of this template for an
+% example.
+%
+\newenvironment{homeworkProblem}[1][-1]{
+    \ifnum#1>0
+        \setcounter{homeworkProblemCounter}{#1}
+    \fi
+    \section{Problem \arabic{homeworkProblemCounter}}
+    \setcounter{partCounter}{1}
+    \enterProblemHeader{homeworkProblemCounter}
+}{
+    \exitProblemHeader{homeworkProblemCounter}
+}
+
+%
+% Homework Details
+%   - Title
+%   - Due date
+%   - Class
+%   - Section/Time
+%   - Instructor
+%   - Author
+%
+
+\newcommand{\hmwkTitle}{Compiler Project - Parser}
+\newcommand{\hmwkDueDate}{October 19, 2016}
+\newcommand{\hmwkClass}{T-603-THYD}
+\newcommand{\hmwkInstructorRole}{TA}
+\newcommand{\hmwkClassInstructor}{Professor David Gudni Halldorsson}
+\newcommand{\hmwkAuthorName}{Darri Steinn Konradsson}
+
+%
+% Title Page
+%
+
+\title{
+    \vspace{2in}
+    \textmd{\textbf{\hmwkClass:\ \hmwkTitle}}\\
+    \normalsize\vspace{0.1in}\small{Due\ on\ \hmwkDueDate\ at 23:59}\\
+    \vspace{0.1in}\large{\textit{\hmwkClassInstructor\ \hmwkInstructorRole}}
+    \vspace{3in}
+}
+
+\author{\textbf{\hmwkAuthorName}}
+\date{}
+
+\renewcommand{\part}[1]{\textbf{\large Part \Alph{partCounter}}\stepcounter{partCounter}\\}
+
+%
+% Various Helper Commands
+%
+
+% Useful for algorithms
+\newcommand{\alg}[1]{\textsc{\bfseries \footnotesize #1}}
+
+% For derivatives
+\newcommand{\deriv}[1]{\frac{\mathrm{d}}{\mathrm{d}x} (#1)}
+
+% For partial derivatives
+\newcommand{\pderiv}[2]{\frac{\partial}{\partial #1} (#2)}
+
+% Integral dx
+\newcommand{\dx}{\mathrm{d}x}
+
+% Alias for the Solution section header
+\newcommand{\solution}{\textbf{\large Solution}}
+
+% Probability commands: Expectation, Variance, Covariance, Bias
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Cov}{\mathrm{Cov}}
+\newcommand{\Bias}{\mathrm{Bias}}
+\newcommand{\token}[1]
+{ \textbf{#1} }
+
+\newcommand{\nont}[1]
+{ \emph{#1} }
+
+\newcommand{\lnont}[1]
+{ \\
+\emph{#1} & $::=$ & 
+}
+
+\begin{document}
+
+\maketitle
+
+\pagebreak
+
+\begin{homeworkProblem}
+    Change the grammar by eliminating left recursion and left factor the grammar.\\
+    
+    \solution\\
+    \begin{tabular}{r l l}
+
+    	\lnont{program} \token{class} \token{id}  \token{\{}  \nont{variable\_declarations} \nont{method\_declarations} \token{\}} \\
+    	
+    	\lnont{variable\_declarations} \nont{type} \nont{variable\_list} \token{$;$} \nont{variable\_declarations} $|$ $\epsilon$ \\
+    	
+    	\lnont{type}  \token{int} $|$ \token{real} \\
+    	
+    	\lnont{variable\_list} \nont{variable} \nont{variable\_list'}\\
+    	
+    	\lnont{variable\_list'} \token{$,$} \nont{variable} \nont{variable\_list'} $|$ $\epsilon$\\
+    
+    	\lnont{variable} \token{id} \nont{variable'} \\ 
+    	
+    	\lnont{variable'} \token{$[$} \token{num} \token{$]$} $|$ $\epsilon$ \\ 
+    
+    	\lnont{method\_declarations} \nont{method\_declaration} \nont{more\_method\_declarations} \\
+    	
+    	\lnont{more\_method\_declarations} \nont{method\_declaration} \nont{more\_method\_declarations} $|$ $\epsilon$ \\
+    
+    	\lnont{method\_declaration} \token{static} \nont{method\_return\_type} \token{id} \token{$($} \nont{parameters} \token{$)$} \\
+    	& &  \token{\{}  \nont{variable\_declarations} \nont{statement\_list} \token{\}} \\
+    
+    	\lnont{method\_return\_type} \nont{type} $|$ \token{void} \\
+    
+    	\lnont{parameters} \nont{parameter\_list} $|$ $\epsilon$ \\ 
+    
+    	\lnont{parameter\_list} \nont{type} \token{id} \nont{parameter\_list'} \\
+    	
+    	\lnont{parameter\_list'} \token{$,$} \nont{type} \token{id} \nont{parameter\_list'} $|$ $\epsilon$ \\
+    	
+    	\lnont{statement\_list} \nont{statement} \nont{statement\_list} $|$ $\epsilon$ \\
+    
+    	\lnont{statement} \nont{statement'} \token{$;$} \\
+                  		& & $|$  \token{if} \token{$($} \nont{expression} \token{$)$} \nont{statement\_block} \nont{optional\_else} \\
+                  		& & $|$  \token{for} \token{$($} \nont{variable\_loc} \token{$=$} \nont{expression} \token{$;$} \nont{expression} \token{$;$} \nont{incr\_decr\_var} \\ & & \hspace{0.2cm} \token{$)$} \nont{statement\_block} \\
+                  		& & $|$  \nont{statement\_block} \\
+                  		
+        \lnont{statement'} \nont{variable\_loc} \token{$=$} \nont{expression} \\
+                        & & $|$  \token{id} \token{$($} \nont{expression\_list} \token{$)$} \\
+                        & & $|$  \token{return} \nont{optional\_expression} \\
+                  		& & $|$  \token{break} \\
+                  		& & $|$  \token{continue} \\
+                  		& & $|$  \nont{incr\_decr\_var} \\ 
+    \end{tabular}
+    \newpage
+    \begin{tabular}{r l l}
+    	\lnont{optional\_expression} \nont{expression} $|$ $\epsilon$ \\
+    
+    	\lnont{statement\_block} \token{$\{$} \nont{statement\_list} \token{$\}$} \\
+    
+    	\lnont{incr\_decr\_var} \nont{variable\_loc} \token{incdecop} \\
+
+    	\lnont{optional\_else} \token{else} \nont{statement\_block} $|$ $\epsilon$ \\
+
+    	\lnont{expression\_list} \nont{expression} \nont{more\_expressions} $|$ $\epsilon$ \\
+
+    	\lnont{more\_expressions} \token{$,$} \nont{expression} \nont{more\_expressions} $|$ $\epsilon$ \\
+    
+    	\lnont{expression} \nont{simple\_expression} \nont{expression'} \\
+    	
+    	\lnont{expression'} \token{relop} \nont{simple\_expression} $|$ $\epsilon$ \\
+    
+    	\lnont{simple\_expression} \nont{term} \nont{simple\_expression'} $|$ \nont{sign} \nont{term} \nont{simple\_expression'} \\
+    	
+    	\lnont{simple\_expression'} \token{addop} \nont{term} \nont{simple\_expression'} $|$ $\epsilon$ \\
+    
+    	\lnont{term} \nont{factor} \nont{term'}  \\
+    	
+    	\lnont{term'} \token{mulop} \nont{factor} \nont{term'} $|$ $\epsilon$ \\
+    
+    	\lnont{factor} \nont{variable\_loc} \\
+    	                & & $|$ \token{id} \token{$($} \nont{expression\_list} \token{$)$} \\
+    	                & & $|$ \token{num} \\
+    	                & & $|$ \token{$($} \nont{expression} \token{$)$} \\
+    	                & & $|$ \token{$!$} \nont{factor} \\
+    
+    	\lnont{variable\_loc} \token{id} \nont{variable\_loc'} \\
+    	
+    	\lnont{variable\_loc'} \token{$[$} \nont{expression} \token{$]$} $|$ $\epsilon$ \\
+    
+    	\lnont{sign} \token{$+$} $|$ \token{$-$} \\
+    \end{tabular}
+\end{homeworkProblem}
+
+\pagebreak
+
+\end{document}
