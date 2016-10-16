@@ -1,18 +1,18 @@
 class Program {
-    /* This is a simple test program */
-    int i, j;
-    real number;
+  /* This is a simple test program */
+  int i, j;
+  real number;
 
-    static void main() {
-        i = 0;
-        j = 1;
+  static void main() {
+    i = 0;
+    j = 1;
 
-        if (i < j) {
-            number = 12.34;
-        } else {
-            number = 12.34E7;
-        }
-
-        i = i + j;
+    if (i < j) {
+      number = 12.34;
+    } else {
+      number = 12.34E7;
     }
+
+    i = i + j;
+  }
 }
