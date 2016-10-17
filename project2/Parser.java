@@ -36,7 +36,11 @@ public class Parser {
   }
 
   private boolean match(TokenCode code) {
-    if (_lookahead == code) {
+    if (code == TokenCode.IDENTIFIER && _lookahead == TokenCode.ERR_LONG_ID) {
+      setError(_token, "^ Identifier too long");
+      readNextToken();
+      return true;
+    } else if (_lookahead == code) {
       readNextToken();
       return true;
     }
@@ -150,7 +154,8 @@ public class Parser {
         recoverError(Firsts.VariableDeclarationsStatementList);
       }
       variableDeclarations(outSideOfScope);
-    } else if (outSideOfScope && _lookahead == TokenCode.IDENTIFIER) {
+    } else if (outSideOfScope && 
+        (_lookahead == TokenCode.IDENTIFIER || _lookahead == TokenCode.ERR_LONG_ID)) {
       setError(_token, "^ None such type");
       recoverError(Follows.NoneSuchType);
       variableDeclarations(outSideOfScope);
@@ -184,7 +189,7 @@ public class Parser {
   }
 
   private void variable() {
-    if (_lookahead == TokenCode.IDENTIFIER) {
+    if (_lookahead == TokenCode.IDENTIFIER || _lookahead == TokenCode.ERR_LONG_ID) {
       match(TokenCode.IDENTIFIER);
       variable2();
     } else {
@@ -326,6 +331,7 @@ public class Parser {
   private void statement2() {
     switch (_lookahead) {
       case IDENTIFIER:
+      case ERR_LONG_ID:
         match(TokenCode.IDENTIFIER);
         if (_lookahead == TokenCode.IDENTIFIER) {
           setError(_tmp, "^ None such type");
@@ -478,6 +484,7 @@ public class Parser {
         match(TokenCode.NUMBER);
         break;
       case IDENTIFIER:
+      case ERR_LONG_ID:
         match(TokenCode.IDENTIFIER);
         if (_lookahead == TokenCode.LPAREN) {
           parenthesizedExpressionList();

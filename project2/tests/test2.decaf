@@ -1,72 +1,35 @@
-/*class Program {
-    static void main() {
-        n = n * 2
-        n = n * asdfasdfadsfasdfasdf
-        n = n * a
-        $i++
-    }
-}*/
-
-/*class Program {
-    int x;
-    int i j;
-    int i, j;
-    int i, int j;
-    int i
-    static void main() {
-        n = n * 2
-        $i++
-    }
-}*/
-
-/*class, ad  Program {
-    static void skitur13(i ,) {}
-    static void skitur1337() {}
-    static void skitur(int i, j) {}
-    static void skitur1(j) {}
-    static void skitur2(i, j) {
-    static void skitur3(blabla i) {}
-    static void main(int i int j) {
-    static void main(int i) {
-        none_such_type o;
-        n = n * 2
-        $i++;
-        for(i = ; i < 10 i++) {
-            }
-        for(i=1;i<10;++ {
-            }
-//                           ^ Expected ')'
-        return t[9;
-//                    ^ Expected ']'
-
-        int tt[
-        y = 2.0
-        y = 2.0 (3.14);
-//              ^ Expected ';'
-        x+;
-//           ^ Invalid statement
-        if (x > 2 {
-        if () {
-        if (x > ) {
-        }
-        }}
-//                  ^ Invalid expression
-
-        break
-//              ^ Expected ';'
-        x = $ + 2;
-//              ^ Illegal character
-    }
-}*/
-
+/* A program without parsing errors */
 class Program {
-    static void main(int i) {
-        int i;
-        int tt[
-        for(i=1;i<10;++ {
-            }
-        y = 2.0
-        y = 2.0 (3.14);
-        break
+  int so_frickinglongidentifierthatitisupsordmaaan;
+  iso_frickinglongidentifierthatitisupsordmaaan x;
+  $ i;
+  real y;
+
+  static test (real x) {
+    real t[10];
+    int i;
+    
+    t[0] = -2.0 * x;
+    for(i=1;i<10;i++) {
+      t[i] = -2.0 * t[i-1];
     }
+    return t[9];
+  }
+
+  static void main() {
+    x = 1;
+    y = 2.0 * (3.14);
+    x++;
+    if (x > 9) {
+      y = 123.45E-3;
+      if (y > 2.0) {
+        break;
+      }
+    }
+    else {
+      y = test(3.3);
+    }
+    x = x + 2;
+    test(y);
+  }
 }

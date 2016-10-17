@@ -35,6 +35,9 @@ public enum TokenCode {
       case NOT: return "^ Expected '!'";
       case INT: return "^ Expected 'int'";
       case REAL: return "^ Expected 'real'";
+      case EOF: return "End of file";
+      case ERR_ILL_CHAR: return "^ Error illegal character";
+      case ERR_LONG_ID: return "^ Error identifier too long";
       default: return "Expected something amazing";
     }
   }
