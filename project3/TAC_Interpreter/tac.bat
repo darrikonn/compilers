@@ -1,0 +1,1 @@
+java -cp ./JTacInt.jar is.ru.tacint.TacBlock %1 %2

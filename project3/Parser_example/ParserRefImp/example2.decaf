@@ -1,0 +1,15 @@
+class Program {
+  int i;
+
+  static int proc(int a, int b) { 
+    int x;
+    
+    x = a - b;
+    proc = x; 
+  }
+
+  static void main() {
+    i = proc(1+2*3, -2 * 5); 
+    writeln(i);
+  } 
+}

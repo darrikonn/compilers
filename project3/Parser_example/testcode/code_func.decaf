@@ -1,0 +1,28 @@
+class Program {
+  int x;
+  int y;
+
+  static int add(int x, int y) {
+	  return x + y;
+  }
+
+  static int mult(int x, int y) {
+	  return x * y;
+  }
+
+  static void toScreen(int x) {
+    int y;
+	
+	  y = x;
+	  writeln(y);
+  }
+
+  static void main() {
+    x = 3;
+    toScreen(x);
+    x = add(x,2);
+    toScreen(x);
+    x = mult(x,3);
+    toScreen(x);
+  }
+}

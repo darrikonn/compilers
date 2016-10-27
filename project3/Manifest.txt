@@ -1,0 +1,2 @@
+Main-Class: MyMain
+Class-Path: Libraries/commons-lang3-3.4.jar

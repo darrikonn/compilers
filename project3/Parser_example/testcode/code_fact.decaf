@@ -1,0 +1,24 @@
+class Program {
+  int j;
+  int n;
+
+	static int fact(int n) {
+	  int k;
+	
+		if (n<1) {
+			return 1;
+	  }
+		else {
+			k = fact(n-1);
+			return n * k;
+	  }
+	}
+
+  static void main() {
+	  for(j = 5;j > 0;j--) {
+		  n = fact(j);
+		  writeln(n);
+		}
+	}
+}
+ 

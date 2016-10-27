@@ -1,0 +1,14 @@
+class Program {
+  int i;
+  int j;
+
+  static void main() {
+    j = 1;
+	  for(i=0;i<10;i++) {
+      j = (i +  j);
+    }
+  
+    writeln(i);
+    writeln(j);
+  }
+}

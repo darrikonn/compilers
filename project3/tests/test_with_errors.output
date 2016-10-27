@@ -1,0 +1,16 @@
+ 11:     for(i=1;i<10;i++ {
+                           ^ Expected ')'
+ 14:     return t[9;
+                    ^ Expected ']'
+ 19:     y = 2.0 (3.14);
+              ^ Expected ';'
+ 20:     x+;
+           ^ Invalid statement
+ 21:     if (x > ) {
+                  ^ Invalid expression
+ 24:         break
+              ^ Expected ';'
+ 28:       y = test(3.3);
+            ^ Expected '{'
+ 30:     x = $ + 2;
+              ^ Illegal character

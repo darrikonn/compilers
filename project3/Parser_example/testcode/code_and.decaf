@@ -1,0 +1,18 @@
+class Program {
+  int i;
+  int j;
+
+  static void main() {
+	  i = 0;
+	  j = 6;
+
+	  if ((i < 1) && (j > 5)) { 
+	  	j = j + 1;
+    }
+	  else {
+		  i = i - 1;
+    }
+	  writeln(i);
+	  writeln(j);
+  }
+}
