@@ -33,6 +33,12 @@ public class Parser {
     _codeGen = new CodeGenerator();
     _tempCnt = 1;
     _labelCnt = 1;
+
+    SymbolTable.insert("0");
+    SymbolTable.insert("1");
+    SymbolTable.insert("main");
+    SymbolTable.insert("write");
+    SymbolTable.insert("writeln");
   }
 
   public void parse() {
@@ -58,7 +64,7 @@ public class Parser {
     // generate code for the label
     _codeGen.generate(TacCode.LABEL, null, null, entry);
 
-    // keep track of two symboltables, one for global scope and one for local
+    // keep track of two symbol-tables, one for global scope and one for local
     // when looking up an entry in symbol table, first check local-scope and then (if not found)
     // check the global-scope symbol table
     return entry;
@@ -171,6 +177,7 @@ public class Parser {
     }
 
     variableDeclarations(true);
+    _codeGen.generate(TacCode.GOTO, null, null, SymbolTable.lookup("main"));// TODO: put into the beginning
     methodDeclarations();
     match(TokenCode.RBRACE);
   }
@@ -244,7 +251,6 @@ public class Parser {
     // TODO: give code generator a list of formal parameters, pass as an array (list)
     // code gen generates FPARAM entries
 
-
     if (_lookahead == TokenCode.STATIC) {
       methodDeclaration();
       moreMethodDeclarations();
@@ -274,7 +280,6 @@ public class Parser {
     // (TacCode.  RETURN)
 
     SymbolTableEntry entry = _token.getSymbolTableEntry();
-    _codeGen.generate(TacCode.GOTO, null, null, entry);
     _codeGen.generate(TacCode.LABEL, null, null, entry);
 
     if (!match(TokenCode.IDENTIFIER) || !match(TokenCode.LPAREN)) {
@@ -402,7 +407,7 @@ public class Parser {
           parenthesizedExpressionList();
           _codeGen.generate(TacCode.CALL, entry, null, null);
         } else {
-          variableLoc2();
+          variableLoc2(); // no array indexing
           if (_lookahead == TokenCode.ASSIGNOP) {
             match(TokenCode.ASSIGNOP);
             _codeGen.generate(TacCode.ASSIGN, expression(), null, entry);
@@ -430,10 +435,12 @@ public class Parser {
     }
   }
 
-  private void optionalExpression() { // Epsilon
+  private SymbolTableEntry optionalExpression() { // Epsilon
     if (isExpression()) {
-      expression();
+      return expression();
     }
+
+    return null;
   }
 
   private void statementBlock() {
@@ -446,11 +453,15 @@ public class Parser {
     }
   }
 
-  private void incrDecrVar() {
-    variableLoc();
+  private SymbolTableEntry incrDecrVar() {
+    SymbolTableEntry entry = variableLoc();
+    SymbolTableEntry tmp = newTemp();
+    _codeGen.generate(_token.getOpType().map(), entry, entry, tmp);
     if (!match(TokenCode.INCDECOP)) {
       recoverError(Follow.Parameters);
     }
+
+    return tmp;
   }
 
   private void optionalElse() { // Epsilon
@@ -493,14 +504,16 @@ public class Parser {
     return entry;
   }
 
-  private void parenthesizedExpression() {
+  private SymbolTableEntry parenthesizedExpression() {
     if (!match(TokenCode.LPAREN)) {
       recoverExpression();
     }
-    expression();
+    SymbolTableEntry entry = expression();
     if (!match(TokenCode.RPAREN)) {
       recoverError(Follow.ParenthesizedExpression);
     }
+
+    return entry;
   }
 
   private void expression2(SymbolTableEntry entry) { // Epsilon
@@ -582,10 +595,11 @@ public class Parser {
     switch (_lookahead) {
       case NOT:
         match(TokenCode.NOT);
-        return factor();
+        entry = newTemp();
+        _codeGen.generate(TacCode.NOT, factor(), null, entry);
+        return entry;
       case LPAREN:
-        parenthesizedExpression();
-        return null;
+        return parenthesizedExpression();
       case NUMBER:
         entry = _token.getSymbolTableEntry();
         match(TokenCode.NUMBER);
@@ -599,7 +613,7 @@ public class Parser {
           parenthesizedExpressionList();
           _codeGen.generate(TacCode.CALL, entry, null, null);
         } else {
-          variableLoc2();
+          variableLoc2(); // no array indexing
         }
         return entry;
       default:
@@ -609,11 +623,15 @@ public class Parser {
     }
   }
 
-  private void variableLoc() {
+  private SymbolTableEntry variableLoc() {
+    SymbolTableEntry entry = _token.getSymbolTableEntry();
+    
     if (!match(TokenCode.IDENTIFIER)) {
       recoverError(First.VariableLoc2);
     }
-    variableLoc2();
+    variableLoc2(); // no array indexing
+
+    return entry;
   }
 
   private void variableLoc2() { // Epsilon

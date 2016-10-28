@@ -305,9 +305,6 @@ class Lexer {
   private int zzFinalHighSurrogate = 0;
 
   /* user code: */
-    SymbolTableEntry tmp1 = SymbolTable.insert("0");
-    SymbolTableEntry tmp2 = SymbolTable.insert("1");
-
     private SymbolTableEntry addSymbolTableEntry() {
         SymbolTableEntry tableEntry;
         if ((tableEntry = SymbolTable.lookup(yytext())) == null) {
