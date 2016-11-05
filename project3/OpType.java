@@ -4,12 +4,12 @@ public enum OpType {
 
   public TacCode map() {
     switch(this) {
-      case EQUAL: return TacCode.EQ;
-      case NOT_EQUAL: return TacCode.NE;
-      case LT: return TacCode.LT;
-      case LTE: return TacCode.LE;
-      case GT: return TacCode.GT;
-      case GTE: return TacCode.GE;
+      case EQUAL: return TacCode.NE;
+      case NOT_EQUAL: return TacCode.EQ;
+      case LT: return TacCode.GE;
+      case LTE: return TacCode.GT;
+      case GT: return TacCode.LE;
+      case GTE: return TacCode.LT;
       case PLUS: return TacCode.ADD;
       case MINUS: return TacCode.SUB;
       default: return TacCode.NOOP;
