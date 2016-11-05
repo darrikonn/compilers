@@ -38,8 +38,8 @@ public class Parser {
     SymbolTable.insert("0", Type.INT);
     SymbolTable.insert("1", Type.INT);
     SymbolTable.insert("main");
-    SymbolTable.insert("write");
-    SymbolTable.insert("writeln");
+    SymbolTable.insert("write", Type.VOID);
+    SymbolTable.insert("writeln", Type.VOID);
     _isMainDeclared = false;
   }
 
@@ -178,7 +178,16 @@ public class Parser {
    * Grammar
    */
   private void program() {
-    if (!match(TokenCode.CLASS) || !match(TokenCode.IDENTIFIER) || !match(TokenCode.LBRACE)) {
+    boolean hasErrorOccured = false;
+    if (!match(TokenCode.CLASS)) { 
+      recoverError(First.VariableMethodDeclarations);
+      hasErrorOccured = true;
+    } 
+    
+    if (!_lexer.yytext().equals("Program")) {
+      setError(_token, "^ Identifier must be named `Program`");
+    }
+    if (!hasErrorOccured && (!match(TokenCode.IDENTIFIER) || !match(TokenCode.LBRACE))) {
       recoverError(First.VariableMethodDeclarations);
     }
 
@@ -237,7 +246,7 @@ public class Parser {
   }
 
   private void variable(Type type) {
-    SymbolTableEntry entry = _token.getSymbolTableEntry();
+    SymbolTableEntry entry = SymbolTable.lookup(_lexer.yytext());
     _codeGen.generate(TacCode.VAR, null, null, entry);
 
     if (_lookahead == TokenCode.IDENTIFIER || _lookahead == TokenCode.ERR_LONG_ID) {
@@ -448,9 +457,10 @@ public class Parser {
       case IDENTIFIER:
       case ERR_LONG_ID:
 
-        SymbolTableEntry entry = _token.getSymbolTableEntry();
-
-
+        SymbolTableEntry entry = SymbolTable.lookup(_lexer.yytext());
+        if (entry.getType() == null) {
+          setError(_token, "^ `" + _lexer.yytext() + "` has not been declared");
+        }
         match(TokenCode.IDENTIFIER);
         if (_lookahead == TokenCode.IDENTIFIER) {
           setError(_tmp, "^ None such type");
@@ -718,6 +728,10 @@ public class Parser {
       case IDENTIFIER:
       case ERR_LONG_ID:
         entry = _token.getSymbolTableEntry();
+        if (entry.getType() == null) {
+          setError(_token, "^ `" + _lexer.yytext() + "` has not been declared");
+        }
+          
         match(TokenCode.IDENTIFIER);
         if (_lookahead == TokenCode.LPAREN) {
           if (SymbolTable.lookupGlobal(_prevText) == null) {
@@ -739,6 +753,9 @@ public class Parser {
   private SymbolTableEntry variableLoc() {
     SymbolTableEntry entry = _token.getSymbolTableEntry();
     
+    if (entry.getType() == null) {
+      setError(_token, "^ `" + _lexer.yytext() + "` has not been declared");
+    }
     if (!match(TokenCode.IDENTIFIER)) {
       recoverError(First.VariableLoc2);
     }

@@ -1,7 +1,27 @@
 class Program {
-  static void main(int i, int j) {
+  int i;
+
+  static void nomainfunction(int i, int j) {
     if ((i < 1) && (j > 5)) {
       i = 0;
     }
+
+    for (k = 0; c < b; a++) { // give me 4 errors
+      d = k + a;  // give me 3 errors
+    }
+  }
+
+  static void ivebeendeclared(int i) {
+    ivenotbeendeclared(50);
+    i = 1.5; // does not work
+  }
+
+  static void ivebeendeclared(real i) {
+    i = 1.5; // works
+    int j = 4.5; // does not work
+    real b = 4.5; // works
+    int a;
+    a = 4.5; // does not work
+    a = 1; // works
   }
 }
