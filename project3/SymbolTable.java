@@ -29,6 +29,10 @@ public class SymbolTable {
     return entry;
   }
 
+  public static SymbolTableEntry lookupGlobal(String lexeme) {
+    return _lookupList_global.get(lexeme);
+  }
+
   public static SymbolTableEntry insert(String lexeme, Type type) {
     SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, type);
     insertEntry(lexeme, symTabEntry);
@@ -51,17 +55,19 @@ public class SymbolTable {
     }
   }
 
-  public static int size() {
-    if (_hasGlobalEnded) {
-      return _seqList_local.size();
-    }
+  public static int localSize() {
+    return _seqList_local.size();
+  }
+
+  public static int globalSize() {
     return _seqList_global.size();
   }
 
-  public static SymbolTableEntry getEntry(int index) {
-    if (_hasGlobalEnded) {
-      return _seqList_local.get(index);
-    }
+  public static SymbolTableEntry getLocalEntry(int index) {
+    return _seqList_local.get(index);
+  }
+
+  public static SymbolTableEntry getGlobalEntry(int index) {
     return _seqList_global.get(index);
   }
 

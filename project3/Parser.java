@@ -291,19 +291,21 @@ public class Parser {
     // eld holding the name of the function.  At the end of a function you need to generate a return statement
     // (TacCode.  RETURN)
 
-    SymbolTableEntry entry = SymbolTable.lookup(_lexer.yytext());
-    entry.setType(returnType);
-    _codeGen.generate(TacCode.LABEL, null, null, entry);
+    String functionName = _lexer.yytext();
+    SymbolTableEntry entry = SymbolTable.lookup(functionName);
 
-    if (_lexer.yytext().equals("main")) {
+    if (functionName.equals("main")) {
       if (_isMainDeclared) {
         setError(_token, "^ the main function has already been declared, you IDIOT!");
       } else {
         _isMainDeclared = true;
       }
-    } else if (SymbolTable.lookup(_lexer.yytext()) != null) {
+    } else if (entry.getType() != null) {
       setError(_token, "^ this function has already been declared");
     }
+    entry.setType(returnType);
+
+    _codeGen.generate(TacCode.LABEL, null, null, entry);
 
     if (!match(TokenCode.IDENTIFIER) || !match(TokenCode.LPAREN)) {
       recoverError(First.Parameters);
@@ -380,9 +382,8 @@ public class Parser {
   private void statement() {
     switch (_lookahead) {
       case IF:
-        SymbolTableEntry ifLabel = newLabel();
         match(TokenCode.IF);
-        SymbolTableEntry entry = parenthesizedExpression(ifLabel);
+        SymbolTableEntry ifLabel = parenthesizedExpression();
         statementBlock();
         SymbolTableEntry elseLabel = optionalElse(ifLabel);
         if (elseLabel != null) {
@@ -393,23 +394,42 @@ public class Parser {
         if (!match(TokenCode.FOR) || !match(TokenCode.LPAREN)) {
           recoverError(Follow.MethodReturnType);
         }
-        variableLoc();
+        SymbolTableEntry entry = variableLoc();
         if (!match(TokenCode.ASSIGNOP)) {
           recoverExpression();
         }
-        expression(null);
+        _codeGen.generate(TacCode.ASSIGN, expression(), null, entry);
         if (!match(TokenCode.SEMICOLON)) {
           recoverExpression();
         }
-        expression(null);
+
+        SymbolTableEntry label1 = newLabel();
+        _codeGen.generate(TacCode.LABEL, null, null, label1);
+
+        SymbolTableEntry label2 = expression();
         if (!match(TokenCode.SEMICOLON)) {
           recoverError(Follow.MethodReturnType);
         }
-        incrDecrVar();
+
+        SymbolTableEntry incdecEntry = variableLoc();
+        TacCode tc = _token.getOpType().map();
+        if (!match(TokenCode.INCDECOP)) {
+          recoverError(Follow.Parameters);
+        }
+
         if (!match(TokenCode.RPAREN)) {
           recoverError(First.StatementBlock);
         }
-        statementBlock();
+        if (!match(TokenCode.LBRACE)) {
+          recoverError(Follow.Statement);
+        }
+        statementList();
+        _codeGen.generate(tc, incdecEntry, SymbolTable.lookup("1"), incdecEntry);
+        _codeGen.generate(TacCode.GOTO, null, null, label1);
+        if (!match(TokenCode.RBRACE)) {
+          recoverError(Follow.StatementBlock);
+        }
+        _codeGen.generate(TacCode.LABEL, null, null, label2);
         break;
       case LBRACE:
         statementBlock();
@@ -436,6 +456,9 @@ public class Parser {
           setError(_tmp, "^ None such type");
           recoverError(Follow.VariableList);
         } else if (_lookahead == TokenCode.LPAREN) {
+          if (SymbolTable.lookupGlobal(_prevText) == null) {
+            setError(_tmp, "^ function `" + _prevText + "` has not been declared!");
+          }
           parenthesizedExpressionList();
           _codeGen.generate(TacCode.CALL, entry, null, null);
         } else {
@@ -446,7 +469,7 @@ public class Parser {
               setError(_tmp, "^ `" + _prevText + "` has not been declared");
             }
             match(TokenCode.ASSIGNOP);
-            SymbolTableEntry entry2 = expression(null);
+            SymbolTableEntry entry2 = expression();
 
             if (type != null && type != entry2.getType()) {
               setError(_tmp, type.toString());
@@ -477,12 +500,11 @@ public class Parser {
     }
   }
 
-  private SymbolTableEntry optionalExpression() { // Epsilon
+  private void optionalExpression() { // Epsilon
     if (isExpression()) {
-      return expression(null);
+      _codeGen.generate(TacCode.ASSIGN, expression(), null, 
+          SymbolTable.getGlobalEntry(SymbolTable.globalSize()-1));
     }
-
-    return null;
   }
 
   private void statementBlock() {
@@ -493,17 +515,6 @@ public class Parser {
     if (!match(TokenCode.RBRACE)) {
       recoverError(Follow.StatementBlock);
     }
-  }
-
-  private SymbolTableEntry incrDecrVar() {
-    SymbolTableEntry entry = variableLoc();
-    SymbolTableEntry tmp = newTemp();
-    _codeGen.generate(_token.getOpType().map(), entry, entry, tmp);
-    if (!match(TokenCode.INCDECOP)) {
-      recoverError(Follow.Parameters);
-    }
-
-    return tmp;
   }
 
   private SymbolTableEntry optionalElse(SymbolTableEntry ifLabel) { // Epsilon
@@ -521,43 +532,50 @@ public class Parser {
     return null;
   }
 
-  private void expressionList() { // Epsilon
+  private void expressionList(ArrayList<SymbolTableEntry> entries) { // Epsilon
     if (isExpression()) {
-      _codeGen.generate(TacCode.APARAM, null, null, expression(null));
-      moreExpressions();
+      // _codeGen.generate(TacCode.APARAM, null, null, expression(null));
+      entries.add(expression());
+      moreExpressions(entries);
     }
   }
 
   private void parenthesizedExpressionList() {
     match(TokenCode.LPAREN); // no need for error recovery or check
-    expressionList();
+    ArrayList<SymbolTableEntry> entries = new ArrayList<SymbolTableEntry>();
+    expressionList(entries);
+    for (SymbolTableEntry entry : entries) {
+      _codeGen.generate(TacCode.APARAM, null, null, entry);
+    }
     if (!match(TokenCode.RPAREN)) {
       recoverError(Follow.ParenthesizedExpressionList);
     }
   }
 
-  private void moreExpressions() { // Epsilon
+  private void moreExpressions(ArrayList<SymbolTableEntry> entries) { // Epsilon
     if (_lookahead == TokenCode.COMMA) {
       match(TokenCode.COMMA);
-      expressionList();
+      expressionList(entries);
     }
   }
 
-  private SymbolTableEntry expression(SymbolTableEntry label) {
+  private SymbolTableEntry expression() {
     // TODO: return a symboltableentry that is an identifier, constant or a temporary name (id = E)
     
 
-    SymbolTableEntry entry = simpleExpression();
-    expression2(entry, label);
+    SymbolTableEntry entry = simpleExpression(null, null);
+    entry = expression2(entry);
 
     return entry;
   }
 
-  private SymbolTableEntry parenthesizedExpression(SymbolTableEntry label) {
+  private SymbolTableEntry parenthesizedExpression() {
     if (!match(TokenCode.LPAREN)) {
       recoverExpression();
     }
-    SymbolTableEntry entry = expression(label);
+
+    //SymbolTableEntry label = newLabel(); // TODO: mogulega byr expression til nytt label?
+    SymbolTableEntry entry = expression();
     if (!match(TokenCode.RPAREN)) {
       recoverError(Follow.ParenthesizedExpression);
     }
@@ -565,17 +583,25 @@ public class Parser {
     return entry;
   }
 
-  private void expression2(SymbolTableEntry entry, SymbolTableEntry label) { // Epsilon
+  private SymbolTableEntry expression2(SymbolTableEntry entry) { // Epsilon
     if (_lookahead == TokenCode.RELOP) {
       TacCode tc = _token.getOpType().map();
       match(TokenCode.RELOP);
-      SymbolTableEntry sexprEntry = simpleExpression();
+      SymbolTableEntry sexprEntry = simpleExpression(entry, tc);
+      Type type;
+      if ((type = entry.getType()) != sexprEntry.getType()) {
+        setError(_tmp, type.toString());
+      }
+      SymbolTableEntry label = newLabel();
       _codeGen.generate(tc, entry, sexprEntry, label);
+
+      return label;
       // check if real comparing int
     }
+    return entry;
   }
 
-  private SymbolTableEntry simpleExpression() {
+  private SymbolTableEntry simpleExpression(SymbolTableEntry prevEntry, TacCode tc) {
     // TODO: return a symboltableentry that is an identifier, constant or a temporary name (id = E)
     
     SymbolTableEntry entry = null;
@@ -588,7 +614,7 @@ public class Parser {
       entry = newTemp();
     }
 
-    SymbolTableEntry termEntry = term();
+    SymbolTableEntry termEntry = term(prevEntry, tc);
     if (entry != null) {
       _codeGen.generate(TacCode.UMINUS, termEntry, null, entry);
       entry.setType(termEntry.getType());
@@ -606,7 +632,7 @@ public class Parser {
       TacCode tc = _token.getOpType().map();
       match(TokenCode.ADDOP);
       SymbolTableEntry tmp = newTemp();
-      SymbolTableEntry termEntry = term();
+      SymbolTableEntry termEntry = term(null, null);
       _codeGen.generate(tc, entry, termEntry, tmp);
       tmp.setType(termEntry.getType());
       return simpleExpression2(tmp);
@@ -615,31 +641,61 @@ public class Parser {
     return entry;
   }
 
-  private SymbolTableEntry term() {
+  private SymbolTableEntry term(SymbolTableEntry prevEntry, TacCode tc) {
     
 
     SymbolTableEntry factorEntry = factor();
-    
-    SymbolTableEntry termEntry = term2();
-    if (termEntry != null) {
-      SymbolTableEntry tmp = newTemp();
-      _codeGen.generate(TacCode.MULT, factorEntry, termEntry, tmp);
-      tmp.setType(factorEntry.getType() == Type.REAL || termEntry.getType() == Type.REAL 
-          ? Type.REAL 
-          : Type.INT);
-      return tmp;
-    }
 
-    return factorEntry;
+    if (_token.getOpType() == OpType.AND) { // &&
+      match(TokenCode.MULOP);
+
+      SymbolTableEntry label = newLabel();
+      SymbolTableEntry tmp1 = addLabels(label);
+
+      SymbolTableEntry label2 = parenthesizedExpression();
+
+      SymbolTableEntry tmp2 = addLabels(label2);
+
+      SymbolTableEntry tmp3 = newTemp();
+      _codeGen.generate(TacCode.AND, tmp1, tmp2, tmp3);
+
+      SymbolTableEntry label3 = newLabel();
+      _codeGen.generate(TacCode.EQ, tmp3, SymbolTable.lookup("0"), label3);
+
+      return label3;
+    } else {
+      SymbolTableEntry termEntry = term2();
+      if (termEntry != null) {
+        SymbolTableEntry tmp = newTemp();
+        _codeGen.generate(TacCode.MULT, factorEntry, termEntry, tmp);
+        tmp.setType(factorEntry.getType() == Type.REAL || termEntry.getType() == Type.REAL 
+            ? Type.REAL 
+            : Type.INT);
+        return tmp;
+      }
+
+      return factorEntry;
+    }
   }
 
   private SymbolTableEntry term2() { // Epsilon
     if (_lookahead == TokenCode.MULOP) {
       match(TokenCode.MULOP);
-      return term();
+      return term(null, null);
     }
 
     return null;
+  }
+
+  private SymbolTableEntry addLabels(SymbolTableEntry label1) {
+    SymbolTableEntry tmp = newTemp();
+    SymbolTableEntry label2 = newLabel();
+    _codeGen.generate(TacCode.ASSIGN, SymbolTable.lookup("1"), null, tmp);
+    _codeGen.generate(TacCode.GOTO, null, null, label2);
+    _codeGen.generate(TacCode.LABEL, null, null, label1);
+    _codeGen.generate(TacCode.ASSIGN, SymbolTable.lookup("0"), null, tmp);
+    _codeGen.generate(TacCode.LABEL, null, null, label2);
+    return tmp;
   }
 
   private SymbolTableEntry factor() {
@@ -654,7 +710,7 @@ public class Parser {
         _codeGen.generate(TacCode.NOT, factor(), null, entry);
         return entry;
       case LPAREN:
-        return parenthesizedExpression(null);
+        return parenthesizedExpression();
       case NUMBER:
         entry = _token.getSymbolTableEntry();
         match(TokenCode.NUMBER);
@@ -664,7 +720,9 @@ public class Parser {
         entry = _token.getSymbolTableEntry();
         match(TokenCode.IDENTIFIER);
         if (_lookahead == TokenCode.LPAREN) {
-
+          if (SymbolTable.lookupGlobal(_prevText) == null) {
+            setError(_tmp, "^ function `" + _prevText + "` has not been declared!");
+          }
           parenthesizedExpressionList();
           _codeGen.generate(TacCode.CALL, entry, null, null);
         } else {
@@ -692,7 +750,7 @@ public class Parser {
   private void variableLoc2() { // Epsilon
     if (_lookahead == TokenCode.LBRACKET) {
       match(TokenCode.LBRACKET);
-      expression(null);
+      expression();
       if (!match(TokenCode.RBRACKET)) {
         recoverError(Follow.VariableLoc2);
       }

@@ -12,6 +12,8 @@ public enum OpType {
       case GTE: return TacCode.LT;
       case PLUS: return TacCode.ADD;
       case MINUS: return TacCode.SUB;
+      case INC: return TacCode.ADD;
+      case DEC: return TacCode.SUB;
       default: return TacCode.NOOP;
     }
   }
