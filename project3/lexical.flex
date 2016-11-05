@@ -11,10 +11,10 @@
 // %debug       // Uncomment to trouble shoot your definitions
 
 %{
-    private SymbolTableEntry addSymbolTableEntry() {
+    private SymbolTableEntry addSymbolTableEntry(Type type) {
         SymbolTableEntry tableEntry;
         if ((tableEntry = SymbolTable.lookup(yytext())) == null) {
-            return SymbolTable.insert(yytext());
+            return SymbolTable.insert(yytext(), type);
         }
 
         return tableEntry;
@@ -109,14 +109,14 @@ Unknown     = .
                                 new SymbolTableEntry(yytext()), yyline, yycolumn);
                     }
                     return new Token(TokenCode.IDENTIFIER, OpType.NONE, DataType.ID, 
-                            addSymbolTableEntry(), yyline, yycolumn); 
+                            addSymbolTableEntry(null), yyline, yycolumn); 
                 }
 
 /* Number */
 {RealNumber}    { return new Token(TokenCode.NUMBER, OpType.NONE, DataType.REAL, 
-                          addSymbolTableEntry(), yyline, yycolumn); }
+                          addSymbolTableEntry(Type.REAL), yyline, yycolumn); }
 {IntNumber}     { return new Token(TokenCode.NUMBER, OpType.NONE, DataType.INT,
-                          addSymbolTableEntry(), yyline, yycolumn); }
+                          addSymbolTableEntry(Type.INT), yyline, yycolumn); }
 
 /* Other */
 {WhiteSpace}    { /* Do Nothing */ }

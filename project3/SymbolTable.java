@@ -9,8 +9,15 @@ public class SymbolTable {
     return _lookupList.get(lexeme);
   }
 
+  public static SymbolTableEntry insert(String lexeme, Type type) {
+    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, type);
+    _lookupList.put(lexeme, symTabEntry);
+    _seqList.add(symTabEntry);
+    return symTabEntry;
+  }
+
   public static SymbolTableEntry insert(String lexeme) {
-    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme);
+    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, null);
     _lookupList.put(lexeme, symTabEntry);
     _seqList.add(symTabEntry);
     return symTabEntry;

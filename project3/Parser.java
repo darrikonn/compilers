@@ -17,6 +17,7 @@ public class Parser {
 
   private Integer _tempCnt;
   private Integer _labelCnt;
+  private boolean _isMainDeclared;
 
   private SymbolTable _symTable;
 
@@ -34,11 +35,12 @@ public class Parser {
     _tempCnt = 1;
     _labelCnt = 1;
 
-    SymbolTable.insert("0");
-    SymbolTable.insert("1");
+    SymbolTable.insert("0", Type.INT);
+    SymbolTable.insert("1", Type.INT);
     SymbolTable.insert("main");
     SymbolTable.insert("write");
     SymbolTable.insert("writeln");
+    _isMainDeclared = false;
   }
 
   public void parse() {
@@ -58,7 +60,7 @@ public class Parser {
 
   public SymbolTableEntry newLabel() {
     // generates next label and inserts into the symbol table
-    String tmp = "lab" + _tempCnt++;
+    String tmp = "lab" + _labelCnt++;
     SymbolTableEntry entry = SymbolTable.insert(tmp);
     
     // generate code for the label
@@ -119,7 +121,7 @@ public class Parser {
   }
 
   private void getErrors() {
-    if (_errorMap.size() == 0) {
+    if (_errorMap.size() == 0 && _isMainDeclared) {
       _codeGen.print();
     } else {
       try {
@@ -137,6 +139,10 @@ public class Parser {
               System.out.println(StringUtils.repeat(" ", err.Column+6-s.indexOf(code)) + err.Message);
             }
           }
+        }
+        if (!_isMainDeclared) {
+          System.out.println("Error: no `main` function found!");
+          cnt++;
         }
         System.out.println("Number of errors: " + cnt);
         br.close();
@@ -187,8 +193,8 @@ public class Parser {
 
 
     if (isType()) {
-      type();
-      variableList();
+      Type type = type();
+      variableList(type);
       if (!match(TokenCode.SEMICOLON)) {
         recoverError(First.VariableDeclarationsStatementList);
       }
@@ -204,33 +210,38 @@ public class Parser {
     }
   }
 
-  private void type() { // don't need error recovery because isType is always called
+  private Type type() { // don't need error recovery because isType is always called
     if (_lookahead == TokenCode.INT) {
       match(TokenCode.INT);
+      return Type.INT;
     } else if (_lookahead == TokenCode.REAL) {
       match(TokenCode.REAL);
+      return Type.REAL;
     }
+    return null;
   }
 
-  private void variableList() {
-    variable();
-    variableList2();
+  private void variableList(Type type) {
+    variable(type);
+    variableList2(type);
   }
 
-  private void variableList2() { // Epsilon
+  private void variableList2(Type type) { // Epsilon
     if (_lookahead == TokenCode.COMMA) {
       match(TokenCode.COMMA);
-      variableList();
+      variableList(type);
     } else if (!Follow.VariableList.contains(_lookahead)) {
       setError(_token, "^ Expected a comma");
       recoverError(Follow.VariableList);
     }
   }
 
-  private void variable() {
-    _codeGen.generate(TacCode.VAR, null, null, _token.getSymbolTableEntry());
+  private void variable(Type type) {
+    SymbolTableEntry entry = _token.getSymbolTableEntry();
+    _codeGen.generate(TacCode.VAR, null, null, entry);
 
     if (_lookahead == TokenCode.IDENTIFIER || _lookahead == TokenCode.ERR_LONG_ID) {
+      entry.setType(type);
       match(TokenCode.IDENTIFIER);
       variable2();
     } else {
@@ -282,6 +293,17 @@ public class Parser {
     SymbolTableEntry entry = _token.getSymbolTableEntry();
     _codeGen.generate(TacCode.LABEL, null, null, entry);
 
+    //System.out.println("the function name `" + _lexer.yytext() + "`");
+    if (_lexer.yytext().equals("main")) {
+      if (_isMainDeclared) {
+        setError(_token, "^ the main function has already been declared, you IDIOT!");
+      } else {
+        _isMainDeclared = true;
+      }
+    } else if (SymbolTable.lookup(_lexer.yytext()) != null) {
+      setError(_token, "^ this function has already been declared");
+    }
+
     if (!match(TokenCode.IDENTIFIER) || !match(TokenCode.LPAREN)) {
       recoverError(First.Parameters);
     }
@@ -301,7 +323,8 @@ public class Parser {
 
   private void methodReturnType() {
     if (isType()) {
-      type();
+      Type type = type();
+      // TODO: set to first instance of local symboltable
     } else if (_lookahead == TokenCode.VOID) {
       match(TokenCode.VOID);
     } else {
@@ -318,10 +341,11 @@ public class Parser {
 
   private void parameterList() {
     if (isType()) {
-      type();
+      Type type = type();
 
       _codeGen.generate(TacCode.FPARAM, null, null, _token.getSymbolTableEntry());
 
+      _token.getSymbolTableEntry().setType(type);
       if (!match(TokenCode.IDENTIFIER)) {
         recoverError(First.ParameterList2);
       }
@@ -353,9 +377,10 @@ public class Parser {
     switch (_lookahead) {
       case IF:
         match(TokenCode.IF);
-        parenthesizedExpression();
+        SymbolTableEntry entry = parenthesizedExpression();
         statementBlock();
-        optionalElse();
+        SymbolTableEntry label1 = optionalElse();
+        SymbolTableEntry label2 = newLabel();
         break;
       case FOR:
         if (!match(TokenCode.FOR) || !match(TokenCode.LPAREN)) {
@@ -410,7 +435,14 @@ public class Parser {
           variableLoc2(); // no array indexing
           if (_lookahead == TokenCode.ASSIGNOP) {
             match(TokenCode.ASSIGNOP);
-            _codeGen.generate(TacCode.ASSIGN, expression(), null, entry);
+            SymbolTableEntry entry2 = expression();
+
+            Type type;
+            if ((type = entry.getType()) != entry2.getType()) {
+              setError(_tmp, type.toString());
+            }
+
+            _codeGen.generate(TacCode.ASSIGN, entry2, null, entry);
           } else if (_lookahead == TokenCode.INCDECOP) {
             match(TokenCode.INCDECOP);
           } else {
@@ -464,12 +496,17 @@ public class Parser {
     return tmp;
   }
 
-  private void optionalElse() { // Epsilon
+  private SymbolTableEntry optionalElse() { // Epsilon
     if (_lookahead == TokenCode.ELSE) {
-      newLabel();
+      _codeGen.generate(TacCode.GOTO, null, null, null);
+      SymbolTableEntry lbl = newLabel();
       match(TokenCode.ELSE);
       statementBlock();
+
+      return lbl;
     }
+
+    return null;
   }
 
   private void expressionList() { // Epsilon

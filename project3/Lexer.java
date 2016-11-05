@@ -305,10 +305,10 @@ class Lexer {
   private int zzFinalHighSurrogate = 0;
 
   /* user code: */
-    private SymbolTableEntry addSymbolTableEntry() {
+    private SymbolTableEntry addSymbolTableEntry(Type type) {
         SymbolTableEntry tableEntry;
         if ((tableEntry = SymbolTable.lookup(yytext())) == null) {
-            return SymbolTable.insert(yytext());
+            return SymbolTable.insert(yytext(), type);
         }
 
         return tableEntry;
@@ -713,12 +713,12 @@ class Lexer {
                                 new SymbolTableEntry(yytext()), yyline, yycolumn);
                     }
                     return new Token(TokenCode.IDENTIFIER, OpType.NONE, DataType.ID, 
-                            addSymbolTableEntry(), yyline, yycolumn);
+                            addSymbolTableEntry(null), yyline, yycolumn);
             }
           case 46: break;
           case 6: 
             { return new Token(TokenCode.NUMBER, OpType.NONE, DataType.INT,
-                          addSymbolTableEntry(), yyline, yycolumn);
+                          addSymbolTableEntry(Type.INT), yyline, yycolumn);
             }
           case 47: break;
           case 7: 
@@ -819,7 +819,7 @@ class Lexer {
           case 71: break;
           case 31: 
             { return new Token(TokenCode.NUMBER, OpType.NONE, DataType.REAL, 
-                          addSymbolTableEntry(), yyline, yycolumn);
+                          addSymbolTableEntry(Type.REAL), yyline, yycolumn);
             }
           case 72: break;
           case 32: 

@@ -1,5 +1,6 @@
 class Program {
-  static void main(int i, int j) {
-    writeln(i, j);
+  int i;
+  static void main() {
+    i = 1; //3.24;
   }
 }
