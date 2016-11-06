@@ -1,7 +1,11 @@
 class Program {
   static void main(int i, int j) {
+    i = 5;
+    j = 5;
     if ((i < 1) && (j > 5)) {
       i = 0;
     }
   }
+
+  // morg && og profa ||
 }

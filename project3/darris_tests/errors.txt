@@ -1,0 +1,23 @@
+  5 : if (i < 1.0) { // should not work
+              ^ Expected an integer
+  9 : for (k = 0; c < b; a++) { // give me 4 errors
+           ^ `k` has not been declared
+  9 : for (k = 0; c < b; a++) { // give me 4 errors
+                  ^ `c` has not been declared
+  9 : for (k = 0; c < b; a++) { // give me 4 errors
+                      ^ `b` has not been declared
+  9 : for (k = 0; c < b; a++) { // give me 4 errors
+                         ^ `a` has not been declared
+ 10 : d = k + a;  // give me 3 errors
+      ^ `d` has not been declared
+ 10 : d = k + a;  // give me 3 errors
+          ^ `k` has not been declared
+ 10 : d = k + a;  // give me 3 errors
+              ^ `a` has not been declared
+ 21 : bla = nomainfunction();  // no parameters
+                           ^ expected 2 parameters
+ 23 : real bla1 = nomainfunction(4, 5);  // does not work, expected integer
+      ^ Expected '}'
+Err : no `main` function found!
+
+Number of errors: 11

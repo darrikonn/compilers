@@ -1,26 +1,38 @@
 class Program {
   int i;
 
-  static void nomainfunction(int i, int j) {
-    if ((i < 1) && (j > 5)) {
+  static int nomainfunction(int i, int j) {
+    if (i < 1.0) { // should not work
       i = 0;
     }
 
     for (k = 0; c < b; a++) { // give me 4 errors
       d = k + a;  // give me 3 errors
     }
+
+    return 3;
   }
 
-  static void ivebeendeclared(int i) {
-    ivenotbeendeclared(50);
+  static int ivebeendeclared(int i) {
+    int bla;
+    real bla1;
+    int i; // does not work, has already been declared
+
+    bla = nomainfunction();  // no parameters 
+    bla = nomainfunction(4, 5);  // works 
+    real bla1 = nomainfunction(4, 5);  // does not work, expected integer
+
+    ivenotbeendeclared(50); // give me error
     i = 1.5; // does not work
+
+    return 4.5; // does not work
   }
 
-  static void ivebeendeclared(real i) {
-    i = 1.5; // works
-    int j = 4.5; // does not work
-    real b = 4.5; // works
+  static void ivebeendeclared(real i) { // already been declared
+    real b;
     int a;
+    i = 1.5; // works because of local scope
+    b = 4.5; // works
     a = 4.5; // does not work
     a = 1; // works
   }

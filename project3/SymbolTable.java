@@ -29,18 +29,31 @@ public class SymbolTable {
     return entry;
   }
 
+  public static SymbolTableEntry smartLookup(String lexeme) {
+    if (_hasGlobalEnded) {
+      return _lookupList_local.get(lexeme);
+    }
+    return _lookupList_global.get(lexeme);
+  }
+
   public static SymbolTableEntry lookupGlobal(String lexeme) {
     return _lookupList_global.get(lexeme);
   }
 
+  public static SymbolTableEntry insert(String lexeme, Type type, int params) {
+    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, type, params);
+    insertEntry(lexeme, symTabEntry);
+    return symTabEntry;
+  }
+
   public static SymbolTableEntry insert(String lexeme, Type type) {
-    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, type);
+    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, type, 0);
     insertEntry(lexeme, symTabEntry);
     return symTabEntry;
   }
 
   public static SymbolTableEntry insert(String lexeme) {
-    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, null);
+    SymbolTableEntry symTabEntry = new SymbolTableEntry(lexeme, null, 0);
     insertEntry(lexeme, symTabEntry);
     return symTabEntry;
   }
