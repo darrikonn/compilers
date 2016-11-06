@@ -20,7 +20,7 @@ class Program {
 
     bla = nomainfunction();  // no parameters 
     bla = nomainfunction(4, 5);  // works 
-    real bla1 = nomainfunction(4, 5);  // does not work, expected integer
+    bla1 = nomainfunction(4, 5);  // does not work, expected integer
 
     ivenotbeendeclared(50); // give me error
     i = 1.5; // does not work

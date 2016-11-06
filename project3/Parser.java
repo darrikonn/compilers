@@ -61,15 +61,7 @@ public class Parser {
   public SymbolTableEntry newLabel() {
     // generates next label and inserts into the symbol table
     String tmp = "lab" + _labelCnt++;
-    SymbolTableEntry entry = SymbolTable.insert(tmp);
-    
-    // generate code for the label
-    //_codeGen.generate(TacCode.LABEL, null, null, entry);
-
-    // keep track of two symbol-tables, one for global scope and one for local
-    // when looking up an entry in symbol table, first check local-scope and then (if not found)
-    // check the global-scope symbol table
-    return entry;
+    return SymbolTable.insert(tmp);
   }
 
   private boolean match(TokenCode code) {
@@ -271,9 +263,6 @@ public class Parser {
   }
 
   private void methodDeclarations() {
-    // TODO: give code generator a list of formal parameters, pass as an array (list)
-    // code gen generates FPARAM entries
-
     if (_lookahead == TokenCode.STATIC) {
       methodDeclaration();
       moreMethodDeclarations();
@@ -290,8 +279,6 @@ public class Parser {
   }
 
   private void methodDeclaration() {
-    // TODO: create a local-scope symbol table that is empty
-
     SymbolTable.resetLocalTable();
 
     match(TokenCode.STATIC); // always checked if static, no need for recovery
@@ -358,9 +345,17 @@ public class Parser {
     if (isType()) {
       Type type = type();
 
-      _codeGen.generate(TacCode.FPARAM, null, null, _token.getSymbolTableEntry());
+      SymbolTableEntry entry = SymbolTable.smartLookup(_lexer.yytext());
+      if (entry == null) {
+        entry = SymbolTable.insert(_lexer.yytext());
+      }
+      _codeGen.generate(TacCode.FPARAM, null, null, entry);
 
-      _token.getSymbolTableEntry().setType(type);
+      if (entry.getType() != null) {
+        setError(_token, "^ `" + _lexer.yytext() + "` has already been declared");
+      } else {
+        entry.setType(type);
+      }
       if (!match(TokenCode.IDENTIFIER)) {
         recoverError(First.ParameterList2);
       }
@@ -465,11 +460,12 @@ public class Parser {
           SymbolTableEntry entry = SymbolTable.lookupGlobal(_prevText);
           if (entry == null) {
             setError(_tmp, "^ function `" + _prevText + "` has not been declared!");
-          }
-          int params = entry.getParams();
-          if (params != parenthesizedExpressionList()) {
-            String str = params == 1 ? "" : "s";
-            setError(_tmp, "^ expected " + params + " parameter" + str);
+          } else {
+            int params = entry.getParams();
+            if (params != parenthesizedExpressionList()) {
+              String str = params == 1 ? "" : "s";
+              setError(_tmp, "^ expected " + params + " parameter" + str);
+            }
           }
           _codeGen.generate(TacCode.CALL, entry, null, null);
         } else {
@@ -546,7 +542,6 @@ public class Parser {
 
   private void expressionList(ArrayList<SymbolTableEntry> entries) { // Epsilon
     if (isExpression()) {
-      // _codeGen.generate(TacCode.APARAM, null, null, expression(null));
       entries.add(expression());
       moreExpressions(entries);
     }
@@ -573,10 +568,7 @@ public class Parser {
   }
 
   private SymbolTableEntry expression() {
-    // TODO: return a symboltableentry that is an identifier, constant or a temporary name (id = E)
-    
-
-    SymbolTableEntry entry = simpleExpression(null);
+    SymbolTableEntry entry = simpleExpression();
     entry = expression2(entry);
 
     return entry;
@@ -599,24 +591,21 @@ public class Parser {
     if (_lookahead == TokenCode.RELOP) {
       TacCode tc = _token.getOpType().map();
       match(TokenCode.RELOP);
-      SymbolTableEntry sexprEntry = simpleExpression(entry);
+      SymbolTableEntry sexprEntry = simpleExpression();
       Type type;
       if ((type = entry.getType()) != sexprEntry.getType()) {
         setError(_tmp, type.toString());
       }
-      // TODO: TODO: TODO:TODO: TODO: TODO:TODO: TODO: TODO:TODO: TODO: TODO:System.out.println("herena: " + _labelCnt);
+      
       SymbolTableEntry label = newLabel();
       _codeGen.generate(tc, entry, sexprEntry, label);
 
       return label;
-      // check if real comparing int
     }
     return entry;
   }
 
-  private SymbolTableEntry simpleExpression(SymbolTableEntry prevEntry) {
-    // TODO: return a symboltableentry that is an identifier, constant or a temporary name (id = E)
-    
+  private SymbolTableEntry simpleExpression() {
     SymbolTableEntry entry = null;
 
     if (_opType == OpType.PLUS) {
@@ -627,7 +616,7 @@ public class Parser {
       entry = newTemp();
     }
 
-    SymbolTableEntry termEntry = term(prevEntry);
+    SymbolTableEntry termEntry = term();
     if (entry != null) {
       _codeGen.generate(TacCode.UMINUS, termEntry, null, entry);
       entry.setType(termEntry.getType());
@@ -645,7 +634,7 @@ public class Parser {
       TacCode tc = _token.getOpType().map();
       match(TokenCode.ADDOP);
       SymbolTableEntry tmp = newTemp();
-      SymbolTableEntry termEntry = term(null);
+      SymbolTableEntry termEntry = term();
       _codeGen.generate(tc, entry, termEntry, tmp);
       tmp.setType(termEntry.getType());
       return simpleExpression2(tmp);
@@ -654,15 +643,13 @@ public class Parser {
     return entry;
   }
 
-  private SymbolTableEntry term(SymbolTableEntry prevEntry) {
+  private SymbolTableEntry term() {
     SymbolTableEntry factorEntry = factor();
 
     if (_token.getOpType() == OpType.AND) { // &&
       match(TokenCode.MULOP);
 
-      //System.out.println("here: " + prevEntry.getLexeme());
-      SymbolTableEntry label = newLabel();
-      SymbolTableEntry tmp1 = addLabels(label);
+      SymbolTableEntry tmp1 = addLabels(factorEntry);
 
       SymbolTableEntry label2 = parenthesizedExpression();
 
@@ -693,7 +680,7 @@ public class Parser {
   private SymbolTableEntry term2() { // Epsilon
     if (_lookahead == TokenCode.MULOP) {
       match(TokenCode.MULOP);
-      return term(null);
+      return term();
     }
 
     return null;
@@ -711,8 +698,6 @@ public class Parser {
   }
 
   private SymbolTableEntry factor() {
-    // TODO: return a symboltableentry that is an identifier, constant or a temporary name (id = E)
-    
     SymbolTableEntry entry;
 
     switch (_lookahead) {
@@ -794,4 +779,4 @@ public class Parser {
     return Validation.StatementList.contains(_lookahead);
   }
 }
-// UuuuuuuuuuuNAaaaaaaaaaaaaaaaaCcEeeePTABLEeeeeeeeeeee
+// Ooooouuuuueeeeee

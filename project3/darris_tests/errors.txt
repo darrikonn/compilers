@@ -14,10 +14,22 @@
           ^ `k` has not been declared
  10 : d = k + a;  // give me 3 errors
               ^ `a` has not been declared
+ 19 : int i; // does not work, has already been declared
+          ^ `i` has already been declared
  21 : bla = nomainfunction();  // no parameters
                            ^ expected 2 parameters
- 23 : real bla1 = nomainfunction(4, 5);  // does not work, expected integer
-      ^ Expected '}'
+ 23 : bla1 = nomainfunction(4, 5);  // does not work, expected integer
+                                ^ Expected a real
+ 25 : ivenotbeendeclared(50); // give me error
+      ^ function `ivenotbeendeclared` has not been declared!
+ 25 : ivenotbeendeclared(50); // give me error
+                        ^ Expected ';'
+ 26 : i = 1.5; // does not work
+          ^ Expected an integer
+ 31 : static void ivebeendeclared(real i) { // already been declared
+                  ^ this function has already been declared
+ 36 : a = 4.5; // does not work
+          ^ Expected an integer
 Err : no `main` function found!
 
-Number of errors: 11
+Number of errors: 17

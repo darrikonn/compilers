@@ -88,4 +88,17 @@ public class SymbolTable {
     _lookupList_local.clear(); 
     _seqList_local.clear();
   }
+
+  public static void printl() {
+    for (SymbolTableEntry entry : _seqList_local) {
+      System.out.print(entry.getLexeme() + " ");
+    }
+    System.out.println();
+  }
+  public static void printg() {
+    for (SymbolTableEntry entry : _seqList_global) {
+      System.out.print(entry.getLexeme() + " ");
+    }
+    System.out.println();
+  }
 }
