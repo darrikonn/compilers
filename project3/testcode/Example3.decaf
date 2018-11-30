@@ -1,0 +1,21 @@
+class Program {
+  int i;
+  static void bla(int i) {
+    i = 1;
+    writeln(i);
+  }
+
+  static void bla2() {
+    writeln(i);
+  }
+
+  static void main() {
+    i = 0;
+    if ((i != 0) || (i != 0) || (i == 0)) {
+      writeln(i);
+    }
+    bla(1);
+    i = 2;
+    bla2();
+  }
+}

@@ -1,0 +1,21 @@
+class Program {
+  static void main(int i, int j) {
+    i = 5;
+    j = 5;
+
+    if ((i == 5) || (j == 5)) {
+      writeln(1);
+    }
+    if ((i > 5) || (j == 5)) {
+      writeln(2);
+    }
+    if ((i == 5) || (j > 5)) {
+      writeln(3);
+    }
+    if ((i > 5) || (j < 5)) {
+      writeln(1337);
+    }
+  }
+
+  // morg && og profa ||
+}
